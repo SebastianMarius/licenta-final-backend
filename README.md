@@ -1,98 +1,149 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Rental Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS backend that aggregates apartment rental listings from multiple Romanian real-estate platforms into a unified PostgreSQL database.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## What it does
 
-## Description
+On every `GET /listings/:city` request the backend:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+1. Runs all four scrapers **in parallel** against the requested city
+2. Maps every raw result to a unified `Listing` model
+3. Upserts into PostgreSQL (duplicates are skipped via `externalId`)
+4. Returns the raw results from each source
 
-## Project setup
+## Scraped sources
 
-```bash
-$ npm install
+| Source | Strategy | Notes |
+|---|---|---|
+| **OLX** | Puppeteer + Stealth plugin | Bypasses bot detection |
+| **Publi24** | Puppeteer + Stealth plugin | Bypasses bot detection |
+| **Storia** | Puppeteer + JSON extraction | Reads embedded JSON payload |
+| **Imobiliare.ro** | Axios (plain HTTP) | Bypasses DataDome via server-rendered HTML |
+
+## API
+
+### `GET /listings/:city`
+
+Scrapes all sources for the given city and saves results to the database.
+
+**Path parameter**
+
+| Param | Description | Example |
+|---|---|---|
+| `city` | City slug used in source URLs | `cluj-napoca`, `bucuresti`, `timisoara` |
+
+**Query parameter**
+
+| Param | Values | Description |
+|---|---|---|
+| `forma` | `proprietar` | Filter to owner-only / zero-commission listings |
+
+**Examples**
+
+```
+GET /listings/cluj-napoca
+GET /listings/cluj-napoca?forma=proprietar
+GET /listings/bucuresti
 ```
 
-## Compile and run the project
+## Data model
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```prisma
+model Listing {
+  id          String    @id @default(cuid())
+  externalId  String    @unique
+  source      String             // "olx" | "publi24" | "storia" | "imobiliare"
+  title       String
+  description String?
+  url         String?
+  price       Decimal?
+  currency    String?            // "RON" | "EUR"
+  city        String?
+  address     String?
+  areaSqm     Decimal?
+  imageUrls   String[]
+  rawPayload  Json?              // original scraped object
+  createdAt   DateTime?          // original listing date from source
+  updatedAt   DateTime?          // last update date from source
+}
 ```
 
-## Run tests
+## Tech stack
+
+- **NestJS** — framework
+- **Prisma** — ORM + migrations
+- **PostgreSQL** — database
+- **Puppeteer Extra** + Stealth Plugin — headless browser scraping
+- **Axios** — HTTP scraping (Imobiliare.ro)
+- **Docker / Docker Compose** — containerised development
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- Docker + Docker Compose
+
+### Local development (with Docker)
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Start Postgres + the NestJS app with hot-reload
+docker-compose up
 ```
 
-## Deployment
+The API will be available at `http://localhost:9000`.  
+PostgreSQL is exposed on port `5433` on the host.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Local development (without Docker)
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Install dependencies
+npm install
+
+# Start Postgres separately, then run:
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Environment variables
 
-## Resources
+Copy `.env` and adjust as needed:
 
-Check out a few resources that may come in handy when working with NestJS:
+```env
+DATABASE_URL=postgresql://rental:rental_dev@localhost:5433/rental_db
+PUPPETEER_EXECUTABLE_PATH=        # leave empty to use bundled Chromium
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Database migrations
 
-## Support
+```bash
+# Apply all pending migrations
+npx prisma migrate dev
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Open Prisma Studio (visual DB browser)
+npx prisma studio
 
-## Stay in touch
+# Regenerate the Prisma client after schema changes
+npx prisma generate
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Project structure
 
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+src/
+├── listings/
+│   ├── listings.controller.ts   # REST endpoints
+│   ├── listings.service.ts      # Orchestrates scrapers + DB writes
+│   ├── listings.module.ts
+│   └── listings-mapper.ts       # Raw → Listing model + date parsers
+├── scrapers/
+│   ├── olx.scraper.ts
+│   ├── publi24.scraper.ts
+│   ├── storia.scraper.ts
+│   └── imobiliare.scraper.ts
+└── prisma/
+    ├── prisma.service.ts
+    └── prisma.module.ts
+prisma/
+├── schema.prisma
+└── migrations/
+```
