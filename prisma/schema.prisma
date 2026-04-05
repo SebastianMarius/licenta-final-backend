@@ -32,3 +32,13 @@ model Listing {
 
   @@index([source, city])
 }
+
+model ListingScrapeCache {
+  id          String   @id @default(cuid())
+  searchCity  String
+  forma       String   @default("")
+  scrapedAt   DateTime @default(now())
+  payload     Json
+
+  @@unique([searchCity, forma])
+}

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { OlxScraper } from 'src/scrapers/olx.scraper';
 import { StoriaScrapper } from 'src/scrapers/storia.scraper';
 import { Publi24Scraper } from 'src/scrapers/publi24.scraper';
@@ -15,6 +16,15 @@ import {
 } from './listings-mapper';
 import { PrismaService } from '../prisma/prisma.service';
 
+const CACHE_MS = 30 * 60 * 1000;
+
+type ListingsPayload = {
+  olx: OlxScrapedItem[];
+  storia: StoriaScrapedItem[];
+  publi24: Publi24ScrapedItem[];
+  imobiliare: ImobiliareScrapedItem[];
+};
+
 @Injectable()
 export class ListingsService {
   constructor(
@@ -26,6 +36,16 @@ export class ListingsService {
   ) {}
 
   async getAllListings(city: string, forma?: string) {
+    const searchCity = city.trim().toLowerCase();
+    const formaKey = forma ?? '';
+
+    const cached = await this.prisma.listingScrapeCache.findUnique({
+      where: { searchCity_forma: { searchCity, forma: formaKey } },
+    });
+    if (cached && Date.now() - cached.scrapedAt.getTime() < CACHE_MS) {
+      return cached.payload as ListingsPayload;
+    }
+
     const [olx, storia, publi24, imobiliare] = await Promise.all([
       this.olxScraper.scrape(city, forma),
       this.storiaScrapper.scrape(city, forma),
@@ -33,16 +53,21 @@ export class ListingsService {
       this.imobiliareRoScraper.scrape(city, forma),
     ]);
 
-    const olxForDb = (olx as OlxScrapedItem[]).map((item) =>
-      mapOlxToListing(item, city),
-    );
-    const storiaForDb = (storia as StoriaScrapedItem[]).map((item) =>
+    const payload: ListingsPayload = {
+      olx: olx as OlxScrapedItem[],
+      storia: storia as StoriaScrapedItem[],
+      publi24: publi24 as Publi24ScrapedItem[],
+      imobiliare: imobiliare as ImobiliareScrapedItem[],
+    };
+
+    const olxForDb = payload.olx.map((item) => mapOlxToListing(item, city));
+    const storiaForDb = payload.storia.map((item) =>
       mapStoriaToListing(item, city),
     );
-    const publi24ForDb = (publi24 as Publi24ScrapedItem[]).map((item) =>
+    const publi24ForDb = payload.publi24.map((item) =>
       mapPubli24ToListing(item, city),
     );
-    const imobiliareForDb = (imobiliare as ImobiliareScrapedItem[]).map((item) =>
+    const imobiliareForDb = payload.imobiliare.map((item) =>
       mapImobiliareToListing(item, city),
     );
 
@@ -51,6 +76,14 @@ export class ListingsService {
       skipDuplicates: true,
     });
 
-    return { olx, storia, publi24, imobiliare };
+    const jsonPayload = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
+
+    await this.prisma.listingScrapeCache.upsert({
+      where: { searchCity_forma: { searchCity, forma: formaKey } },
+      create: { searchCity, forma: formaKey, payload: jsonPayload },
+      update: { scrapedAt: new Date(), payload: jsonPayload },
+    });
+
+    return payload;
   }
 }
