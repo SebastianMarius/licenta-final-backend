@@ -42,8 +42,8 @@ export class OlxScraper {
             }> = [];
             let globalIndex = 0;
 
-            for (let p = 1; p <= MAX_PAGES; p++) {
-                const url = p === 1 ? baseUrl : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}page=${p}`;
+            for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {
+                const url = pageToScrape === 1 ? baseUrl : `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}page=${pageToScrape}`;
                 await page.goto(url, { waitUntil: 'load', timeout: 30000 });
 
                 try {
@@ -52,7 +52,7 @@ export class OlxScraper {
                     const diagTitle = await page.title().catch(() => '?');
                     const diagUrl   = page.url();
                     const diagBody  = await page.evaluate(() => document.body?.innerText?.slice(0, 200) ?? '').catch(() => '');
-                    console.warn(`OLX: no cards on page ${p} — title="${diagTitle}" url=${diagUrl} body="${diagBody}"`);
+                    console.warn(`OLX: no cards on page ${pageToScrape} — title="${diagTitle}" url=${diagUrl} body="${diagBody}"`);
                     break;
                 }
 

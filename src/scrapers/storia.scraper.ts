@@ -123,11 +123,10 @@ export class StoriaScrapper {
             const allItems: unknown[] = [];
             let globalIndex = 0;
 
-            for (let p = 1; p <= MAX_PAGES; p++) {
-                const url = `${baseUrl}?by=DEFAULT&direction=DESC&page=${p}`;
+            for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {
+                const url = `${baseUrl}?by=DEFAULT&direction=DESC&page=${pageToScrape}`;
                 await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
 
-                // __NEXT_DATA__ is embedded in the HTML at render time — no extra wait needed
                 const { items, totalPages } = await page.evaluate((pageNum: number) => {
                     const scriptEl = document.getElementById("__NEXT_DATA__");
                     if (!scriptEl?.textContent) return { items: [], totalPages: 0 };
@@ -139,14 +138,13 @@ export class StoriaScrapper {
                     const totalPages: number = pagination?.totalPages ?? pageNum;
 
                     return { items: rawItems, totalPages };
-                }, p);
+                }, pageToScrape);
 
                 if (items.length === 0) break;
 
-                // Stamp a global index onto each item for a unique id prefix
-                const stamped = items.map((item: any, i: number) => ({
+                const stamped = items.map((item: any, index: number) => ({
                     ...item,
-                    id: `${globalIndex + i}-${item.slug ?? item.id}`,
+                    id: `${globalIndex + index}-${item.slug ?? item.id}`,
                 }));
 
                 const filtered =
@@ -157,7 +155,7 @@ export class StoriaScrapper {
                 allItems.push(...filtered);
                 globalIndex += items.length;
 
-                if (p >= totalPages) break;
+                if (pageToScrape >= totalPages) break;
             }
 
             console.log(`Storia scraper: collected ${allItems.length} items`);

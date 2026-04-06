@@ -1,97 +1,75 @@
-// ---------------------------------------------------------------------------
-// Shared date helpers
-// ---------------------------------------------------------------------------
-
-const RO_MONTHS: Record<string, number> = {
+const parseRoMonth: Record<string, number> = {
   ianuarie: 0, februarie: 1, martie: 2, aprilie: 3, mai: 4, iunie: 5,
   iulie: 6, august: 7, septembrie: 8, octombrie: 9, noiembrie: 10, decembrie: 11,
 };
 
-/**
- * Parse OLX date strings:
- *   "03 aprilie 2026"
- *   "Reactualizat la 03 aprilie 2026"
- *   "Azi la 09:23"
- *   "Ieri la 10:00"
- */
 export function parseOlxDate(raw: string | undefined | null): Date | null {
   if (!raw) return null;
   const stripped = raw.replace(/^reactualizat\s+(?:la\s+)?/i, '').trim();
-  const s = stripped.toLowerCase();
+  const cleanedDate = stripped.toLowerCase();
 
-  const timeM = s.match(/(\d{1,2}):(\d{2})/);
-  const h = timeM ? Number(timeM[1]) : 0;
-  const min = timeM ? Number(timeM[2]) : 0;
+  const timeMatch = cleanedDate.match(/(\d{1,2}):(\d{2})/);
+  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const min = timeMatch ? Number(timeMatch[2]) : 0;
 
-  if (s.startsWith('azi')) {
-    const d = new Date();
-    d.setHours(h, min, 0, 0);
-    return d;
+  if (cleanedDate.startsWith('azi')) {
+    const date = new Date();
+    date.setHours(hour, min, 0, 0);
+    return date;
   }
-  if (s.startsWith('ieri')) {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    d.setHours(h, min, 0, 0);
-    return d;
+  if (cleanedDate.startsWith('ieri')) {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    date.setHours(hour, min, 0, 0);
+    return date;
   }
 
-  const m = stripped.match(/^(\d{1,2})\s+(\w+)\s+(\d{4})$/i);
-  if (!m) return null;
-  const month = RO_MONTHS[m[2].toLowerCase()];
+  const match = stripped.match(/^(\d{1,2})\s+(\w+)\s+(\d{4})$/i);
+  if (!match) return null;
+  const month = parseRoMonth[match[2].toLowerCase()];
   if (month === undefined) return null;
-  return new Date(Number(m[3]), month, Number(m[1]));
+  return new Date(Number(match[3]), month, Number(match[1]));
 }
 
-/**
- * Parse Publi24 date strings:
- *   "azi 08:32" / "Azi la 09:23"  → today at that time
- *   "ieri 10:00" / "Ieri la 10:00" → yesterday at that time
- *   "3 aprilie"                    → 3rd of that month, current year
- *   "23 martie 2026"               → absolute date (optional time suffix)
- */
 export function parsePubli24Date(raw: string | null | undefined): Date | null {
   if (!raw) return null;
-  const s = raw.trim().toLowerCase();
-  const timeM = s.match(/(\d{1,2}):(\d{2})/);
-  const h = timeM ? Number(timeM[1]) : 0;
-  const min = timeM ? Number(timeM[2]) : 0;
+  const stripped = raw.trim().toLowerCase();
+  const timeMatch = stripped.match(/(\d{1,2}):(\d{2})/);
+  const hour = timeMatch ? Number(timeMatch[1]) : 0;
+  const min = timeMatch ? Number(timeMatch[2]) : 0;
 
-  if (s.startsWith('azi')) {
-    const d = new Date();
-    d.setHours(h, min, 0, 0);
-    return d;
+  if (stripped.startsWith('azi')) {
+    const date = new Date();
+    date.setHours(hour, min, 0, 0);
+    return date;
   }
-  if (s.startsWith('ieri')) {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    d.setHours(h, min, 0, 0);
-    return d;
+  if (stripped.startsWith('ieri')) {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    date.setHours(hour, min, 0, 0);
+    return date;
   }
-  // "23 martie 2026" — with explicit year
-  const withYear = s.match(/^(\d{1,2})\s+(\w+)\s+(\d{4})/);
+
+  const withYear = stripped.match(/^(\d{1,2})\s+(\w+)\s+(\d{4})/);
   if (withYear) {
-    const month = RO_MONTHS[withYear[2]];
-    if (month !== undefined) return new Date(Number(withYear[3]), month, Number(withYear[1]), h, min);
+    const month = parseRoMonth[withYear[2]];
+    if (month !== undefined) return new Date(Number(withYear[3]), month, Number(withYear[1]), hour, min);
   }
-  // "3 aprilie" — day + month only, assume current year
-  const noYear = s.match(/^(\d{1,2})\s+(\w+)$/);
+
+  const noYear = stripped.match(/^(\d{1,2})\s+(\w+)$/);
   if (noYear) {
-    const month = RO_MONTHS[noYear[2]];
+    const month = parseRoMonth[noYear[2]];
     if (month !== undefined) return new Date(new Date().getFullYear(), month, Number(noYear[1]));
   }
   return null;
 }
 
-/**
- * Parse Storia ISO-like dates: "2026-04-05 16:56:42" or "2026-02-08T18:06:46Z".
- */
+
 export function parseStoriaDate(raw: string | null | undefined): Date | null {
   if (!raw) return null;
-  const d = new Date(raw.trim().replace(' ', 'T'));
-  return isNaN(d.getTime()) ? null : d;
+  const date = new Date(raw.trim().replace(' ', 'T'));
+  return isNaN(date.getTime()) ? null : date;
 }
-
-// --- OLX ---
 
 export type OlxScrapedItem = {
   index?: number;
@@ -136,8 +114,6 @@ export function mapOlxToListing(item: OlxScrapedItem, city: string) {
   };
 }
 
-// --- Publi24 ---
-
 export type Publi24ScrapedItem = {
   index?: number;
   title: string | null;
@@ -181,17 +157,13 @@ export function mapPubli24ToListing(item: Publi24ScrapedItem, city: string) {
   };
 }
 
-// --- Imobiliare.ro ---
-
 export type ImobiliareScrapedItem = {
   externalId: string | null;
   title: string | null;
   price: string | null;
   currency: string | null;
   city: string | null;
-  /** e.g. "Judetul Cluj Cluj-Napoca Zorilor" */
   locationId: string | null;
-  /** Raw string from data-surface, e.g. "68" or "not applicable" */
   surface: string | null;
   listId: string | null;
   sellerType: string | null;
@@ -210,14 +182,10 @@ export function parseImobiliarePrice(price: string | null | undefined): {
 
 export function mapImobiliareToListing(item: ImobiliareScrapedItem, cityParam: string) {
   const { value: price } = parseImobiliarePrice(item.price);
-  // Currency comes directly from the card (usually EUR on imobiliare.ro)
   const currency = item.currency ?? 'EUR';
 
-  // Prefer the structured city from the data attribute; fall back to the
-  // query city so the field is never empty.
   const city = item.city ?? cityParam;
 
-  // Parse sqm – the site stores "not applicable" when unknown
   let areaSqm: string | undefined;
   if (item.surface && item.surface !== 'not applicable') {
     const sqm = parseFloat(item.surface);
@@ -242,7 +210,6 @@ export function mapImobiliareToListing(item: ImobiliareScrapedItem, cityParam: s
   };
 }
 
-// --- Storia ---
 
 export type StoriaScrapedItem = {
   id?: string | number;
@@ -254,9 +221,7 @@ export type StoriaScrapedItem = {
   areaInSquareMeters?: number | null;
   shortDescription?: string | null;
   slug?: string | null;
-  /** ISO-8601 string: when the listing was last updated/re-listed on Storia */
   dateCreated?: string | null;
-  /** ISO-8601 string: when the listing was first published on Storia */
   createdAtFirst?: string | null;
 };
 

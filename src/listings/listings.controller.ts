@@ -18,8 +18,10 @@ export class ListingsController {
     @Get(':city')
     async getListings(
         @Param('city') city: string,
-        @Query('forma') forma?: string
+        @Query('forma') forma?: string,
+        @Query('minPrice') minPrice?: string,
+        @Query('maxPrice') maxPrice?: string,
     ) {
-        return this.listingService.getAllListings(city, forma);
+        return this.listingService.getAllListings(city, forma, minPrice, maxPrice);
     }
 }

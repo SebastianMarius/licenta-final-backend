@@ -121,9 +121,9 @@ export class Publi24Scraper {
             const allItems: unknown[] = [];
             let globalIndex = 0;
 
-            for (let p = 1; p <= MAX_PAGES; p++) {
+            for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {
                 const params = new URLSearchParams();
-                if (p > 1) params.set("pag", String(p));
+                if (pageToScrape > 1) params.set("pag", String(pageToScrape));
                 if (forma === "proprietar") params.set("commercial", "false");
                 const query = params.toString();
                 const url = query ? `${baseUrl}?${query}` : baseUrl;
@@ -171,19 +171,18 @@ export class Publi24Scraper {
                         return { title, link, price, location, image, squareMeters, date };
                     });
 
-                    // Derive total pages from the last numbered pagination link
                     let totalPages = pageNum;
                     document.querySelectorAll(".pagination li a").forEach((el) => {
                         const href = (el as HTMLAnchorElement).href;
-                        const m = href.match(/[?&]pag=(\d+)/);
-                        if (m) {
-                            const n = parseInt(m[1]);
-                            if (n > totalPages) totalPages = n;
+                        const match = href.match(/[?&]pag=(\d+)/);
+                        if (match) {
+                            const page = parseInt(match[1]);
+                            if (page > totalPages) totalPages = page;
                         }
                     });
 
                     return { items, totalPages };
-                }, p);
+                }, pageToScrape);
 
                 if (items.length === 0) break;
 
@@ -191,7 +190,7 @@ export class Publi24Scraper {
                     allItems.push({ index: globalIndex++, ...(item as object) });
                 }
 
-                if (p >= totalPages) break;
+                if (pageToScrape >= totalPages) break;
             }
 
             console.log(`Publi24 scraper: collected ${allItems.length} items`);
