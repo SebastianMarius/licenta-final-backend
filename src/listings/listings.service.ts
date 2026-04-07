@@ -64,6 +64,32 @@ export class ListingsService {
     return null;
   }
 
+  /** base64url(JSON) — use for /renting/:id; decode with JSON.parse(Buffer.from(id,'base64url')) */
+  private listingId(source: string, externalId: string) {
+    return Buffer.from(JSON.stringify({ source, externalId }), 'utf8').toString('base64url');
+  }
+
+  private withIds(payload: ListingsPayload, city: string) {
+    return {
+      olx: payload.olx.map((item) => {
+        const { externalId } = mapOlxToListing(item, city);
+        return { ...item, source: 'olx' as const, externalId, id: this.listingId('olx', externalId) };
+      }),
+      storia: payload.storia.map((item) => {
+        const { externalId } = mapStoriaToListing(item, city);
+        return { ...item, source: 'storia' as const, externalId, id: this.listingId('storia', externalId) };
+      }),
+      publi24: payload.publi24.map((item) => {
+        const { externalId } = mapPubli24ToListing(item, city);
+        return { ...item, source: 'publi24' as const, externalId, id: this.listingId('publi24', externalId) };
+      }),
+      imobiliare: payload.imobiliare.map((item) => {
+        const { externalId } = mapImobiliareToListing(item, city);
+        return { ...item, source: 'imobiliare' as const, externalId, id: this.listingId('imobiliare', externalId) };
+      }),
+    };
+  }
+
   private filterByPrice(listings: ListingsPayload, minPrice: number, maxPrice: number): ListingsPayload {
     const inRange = (priceOfListing: number | null) =>
       priceOfListing == null || (priceOfListing >= minPrice && priceOfListing <= maxPrice);
@@ -92,7 +118,8 @@ export class ListingsService {
       where: { searchCity_forma: { searchCity, forma: formaKey } },
     });
     if (cached && Date.now() - cached.scrapedAt.getTime() < cacheTime) {
-      return this.filterByPrice(cached.payload as ListingsPayload, minP, maxP);
+      const filtered = this.filterByPrice(cached.payload as ListingsPayload, minP, maxP);
+      return this.withIds(filtered, city);
     }
 
     const [olx, storia, publi24, imobiliare] = await Promise.all([
@@ -133,6 +160,7 @@ export class ListingsService {
       update: { scrapedAt: new Date(), payload: jsonPayload },
     });
 
-    return this.filterByPrice(payload, minP, maxP);
+    const filtered = this.filterByPrice(payload, minP, maxP);
+    return this.withIds(filtered, city);
   }
 }

@@ -253,8 +253,18 @@ export function mapStoriaToListing(item: StoriaScrapedItem, cityParam: string) {
     : [];
 
   const slug = item.slug?.trim();
+  const slugPart = slug
+    ? slug.replace(/^\//, '').replace(/[^a-zA-Z0-9_-]/g, '-')
+    : '';
+  const externalId =
+    item.id != null
+      ? String(item.id)
+      : slugPart
+        ? `storia-slug-${slugPart}`
+        : `storia-${cityParam}-${(item.title ?? 'unknown').replace(/\n+/g, ' ').trim().slice(0, 80)}`;
+
   return {
-    externalId: item.id != null ? String(item.id) : `storia-${cityParam}`,
+    externalId,
     source: 'storia',
     title: (item.title ?? 'Unknown').replace(/\n+/g, ' ').trim().slice(0, 500),
     description: item.shortDescription?.trim() ?? null,

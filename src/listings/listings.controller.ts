@@ -12,6 +12,7 @@ export class ListingsController {
         return {
             message: 'Provide a city in the path',
             example: 'GET /listings/bucharest',
+            note: 'Each item has id, source, externalId',
         };
     }
 
