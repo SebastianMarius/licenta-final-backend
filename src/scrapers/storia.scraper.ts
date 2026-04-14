@@ -142,10 +142,19 @@ export class StoriaScrapper {
 
                 if (items.length === 0) break;
 
-                const stamped = items.map((item: any, index: number) => ({
-                    ...item,
-                    id: `${globalIndex + index}-${item.slug ?? item.id}`,
-                }));
+                 const stamped = items.map((item: any, index: number) => {
+                    const slugRaw = item?.slug;
+                    const slug =
+                        typeof slugRaw === "string" ? slugRaw.trim().replace(/^\//, "") : "";
+                    const url = slug
+                        ? `https://www.storia.ro/ro/oferta/${slug}`
+                        : null;
+                    return {
+                        ...item,
+                        id: `${globalIndex + index}-${item.slug ?? item.id}`,
+                        url,
+                    };
+                });
 
                 const filtered =
                     forma === "proprietar"

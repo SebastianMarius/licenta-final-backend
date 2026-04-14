@@ -142,7 +142,7 @@ export class Publi24Scraper {
                     const items = Array.from(cards).map((card) => {
                         const titleEl = card.querySelector("h2.article-title a") as HTMLAnchorElement | null;
                         const title = titleEl?.innerText?.trim() ?? null;
-                        const link = titleEl?.href ?? null;
+                        const url = titleEl?.href ?? null;
 
                         const priceEl = card.querySelector(".article-price") as HTMLElement | null;
                         const price = priceEl?.innerText?.trim() ?? null;
@@ -168,7 +168,7 @@ export class Publi24Scraper {
                             }
                         }
 
-                        return { title, link, price, location, image, squareMeters, date };
+                        return { title, url, price, location, image, squareMeters, date };
                     });
 
                     let totalPages = pageNum;

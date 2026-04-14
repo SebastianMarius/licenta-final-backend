@@ -36,7 +36,7 @@ export class OlxScraper {
                 price: string | null;
                 location: string | undefined;
                 date: string | undefined;
-                link: string | undefined;
+                url: string | undefined;
                 image: string | null | undefined;
                 squareMeters: number | null;
             }> = [];
@@ -61,7 +61,7 @@ export class OlxScraper {
                     return Array.from(cards).map((card) => {
                         const title = (card.querySelector('[data-cy="ad-card-title"]') as HTMLElement)?.innerText ?? null;
                         const price = (card.querySelector('[data-testid="ad-price"]') as HTMLElement)?.innerText ?? null;
-                        const link = (card.querySelector('a') as HTMLAnchorElement)?.href;
+                        const url = (card.querySelector('a') as HTMLAnchorElement)?.href;
                         const locationDate = (card.querySelector('[data-testid="location-date"]') as HTMLElement)?.innerText ?? '';
                         const [location, date] = locationDate.split(' - ').map((s) => s?.trim());
                         const image = card.querySelector('img')?.src;
@@ -74,7 +74,7 @@ export class OlxScraper {
                             if (!isNaN(parsed)) squareMeters = parsed;
                         }
 
-                        return { title, price, link, location, date, image, squareMeters };
+                        return { title, price, url, location, date, image, squareMeters };
                     });
                 });
 

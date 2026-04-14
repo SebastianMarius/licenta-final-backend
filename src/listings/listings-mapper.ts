@@ -77,7 +77,7 @@ export type OlxScrapedItem = {
   price: string | null;
   location?: string;
   date?: string;
-  link?: string;
+  url?: string;
   image?: string | null;
   squareMeters?: number | null;
 };
@@ -97,11 +97,11 @@ export function parseOlxPrice(price: string | null | undefined): {
 export function mapOlxToListing(item: OlxScrapedItem, city: string) {
   const { value: price, currency } = parseOlxPrice(item.price);
   return {
-    externalId: item.link ?? `olx-${city}-${(item.title ?? '').slice(0, 50)}`,
+    externalId: item.url ?? `olx-${city}-${(item.title ?? '').slice(0, 50)}`,
     source: 'olx',
     title: (item.title ?? 'Unknown').replace(/\n+/g, ' ').trim().slice(0, 500),
     description: null as string | null,
-    url: item.link ?? null,
+    url: item.url ?? null,
     price: price != null ? String(price) : undefined,
     currency,
     city: item.location ?? city,
@@ -117,7 +117,7 @@ export function mapOlxToListing(item: OlxScrapedItem, city: string) {
 export type Publi24ScrapedItem = {
   index?: number;
   title: string | null;
-  link?: string | null;
+  url?: string | null;
   price?: string | null;
   location?: string | null;
   image?: string | null;
@@ -140,11 +140,11 @@ export function parsePubli24Price(price: string | null | undefined): {
 export function mapPubli24ToListing(item: Publi24ScrapedItem, city: string) {
   const { value: price, currency } = parsePubli24Price(item.price);
   return {
-    externalId: item.link ?? `publi24-${city}-${(item.title ?? '').slice(0, 50)}`,
+    externalId: item.url ?? `publi24-${city}-${(item.title ?? '').slice(0, 50)}`,
     source: 'publi24',
     title: (item.title ?? 'Unknown').replace(/\n+/g, ' ').trim().slice(0, 500),
     description: null as string | null,
-    url: item.link ?? null,
+    url: item.url ?? null,
     price: price != null ? String(price) : undefined,
     currency,
     city: item.location ?? city,
@@ -210,7 +210,6 @@ export function mapImobiliareToListing(item: ImobiliareScrapedItem, cityParam: s
   };
 }
 
-
 export type StoriaScrapedItem = {
   id?: string | number;
   title?: string | null;
@@ -221,6 +220,7 @@ export type StoriaScrapedItem = {
   areaInSquareMeters?: number | null;
   shortDescription?: string | null;
   slug?: string | null;
+  url?: string | null;
   dateCreated?: string | null;
   createdAtFirst?: string | null;
 };
@@ -263,12 +263,16 @@ export function mapStoriaToListing(item: StoriaScrapedItem, cityParam: string) {
         ? `storia-slug-${slugPart}`
         : `storia-${cityParam}-${(item.title ?? 'unknown').replace(/\n+/g, ' ').trim().slice(0, 80)}`;
 
+  const listingUrl =
+    item.url ??
+    (slug ? `https://www.storia.ro/ro/oferta/${slug.replace(/^\//, '')}` : null);
+
   return {
     externalId,
     source: 'storia',
     title: (item.title ?? 'Unknown').replace(/\n+/g, ' ').trim().slice(0, 500),
     description: item.shortDescription?.trim() ?? null,
-    url: slug ? `https://www.storia.ro/ro/oferta/${slug.replace(/^\//, '')}` : null,
+    url: listingUrl,
     price: price != null ? String(price) : undefined,
     currency,
     city,

@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
+/**
+ * Maps the canonical city key (e.g. "cluj-napoca") to the imobiliare.ro
+ * URL path segment (e.g. "judetul-cluj/cluj-napoca").
+ * Bucuresti is special: the site uses simply "bucuresti" without a county prefix.
+ */
 const IMOBILIARE_CITY_MAP: Record<string, string> = {
+    // County capitals
     'alba-iulia':            'judetul-alba/alba-iulia',
     'arad':                  'judetul-arad/arad',
     'pitesti':               'judetul-arges/pitesti',
@@ -43,7 +49,7 @@ const IMOBILIARE_CITY_MAP: Record<string, string> = {
     'vaslui':                'judetul-vaslui/vaslui',
     'ramnicu-valcea':        'judetul-valcea/ramnicu-valcea',
     'focsani':               'judetul-vrancea/focsani',
-   
+    // Other major cities
     'turda':                 'judetul-cluj/turda',
     'dej':                   'judetul-cluj/dej',
     'campia-turzii':         'judetul-cluj/campia-turzii',
@@ -108,11 +114,17 @@ export type ImobiliareRawItem = {
     imageUrls: string[];
 };
 
-function getAttributeValue(tag: string, name: string): string | null {
-    const match = tag.match(new RegExp(`${name}="([^"]*)"`));
-    return match ? decodeHtmlEntities(match[1]) : null;
+// ---------------------------------------------------------------------------
+// HTML parsing helpers
+// ---------------------------------------------------------------------------
+
+/** Extract the value of a single HTML attribute from a tag string. */
+function attr(tag: string, name: string): string | null {
+    const m = tag.match(new RegExp(`${name}="([^"]*)"`));
+    return m ? decodeHtmlEntities(m[1]) : null;
 }
 
+/** Minimal HTML entity decoder for the subset used by imobiliare.ro. */
 function decodeHtmlEntities(text: string): string {
     return text
         .replace(/&amp;/g, '&')
@@ -122,9 +134,19 @@ function decodeHtmlEntities(text: string): string {
         .replace(/&#39;/g, "'");
 }
 
+/**
+ * Parse all listing cards from an imobiliare.ro results page.
+ *
+ * The site server-renders every card, including all data we need, inside
+ * `data-*` attributes on the `div[data-bi="product-basic"]` element.
+ * We never need to execute JavaScript — plain HTTP is enough.
+ */
 function parseCards(html: string): ImobiliareRawItem[] {
     const items: ImobiliareRawItem[] = [];
 
+    // Each product card's opening tag carries all structured data.
+    // The tag is one long line; regex is safe here because the attribute names
+    // are stable and there is no nested `data-bi="product-basic"` inside.
     const tagPattern = /<div[^>]+data-bi="product-basic"[^>]+>/g;
     let match: RegExpExecArray | null;
 
@@ -132,22 +154,24 @@ function parseCards(html: string): ImobiliareRawItem[] {
         const tag = match[0];
         const tagPos = match.index;
 
-        const externalId = getAttributeValue(tag, 'data-id');
-        const title = getAttributeValue(tag, 'data-name');
-        const price = getAttributeValue(tag, 'data-price');
-        const currency = getAttributeValue(tag, 'data-bi-listing-currency');
-        const city = getAttributeValue(tag, 'data-city');
-        const locationId = getAttributeValue(tag, 'data-location-id');
-        const surface = getAttributeValue(tag, 'data-surface');
-        const listId = getAttributeValue(tag, 'data-list-id');
-        const sellerType = getAttributeValue(tag, 'data-sellertype');
+        const externalId = attr(tag, 'data-id');
+        const title = attr(tag, 'data-name');
+        const price = attr(tag, 'data-price');
+        const currency = attr(tag, 'data-bi-listing-currency');
+        const city = attr(tag, 'data-city');
+        const locationId = attr(tag, 'data-location-id');
+        const surface = attr(tag, 'data-surface');
+        const listId = attr(tag, 'data-list-id');
+        const sellerType = attr(tag, 'data-sellertype');
 
+        // Listing URL: href="/oferta/...-{listId}"
         let url: string | null = null;
         if (listId) {
             const hrefM = html.match(new RegExp(`href="(/oferta/[^"]*-${listId})"`));
             if (hrefM) url = `https://www.imobiliare.ro${hrefM[1]}`;
         }
 
+        // Images: roamcdn CDN urls within ~6 kB after the opening tag
         const imageUrls: string[] = [];
         const section = html.slice(tagPos, tagPos + 12000);
         const imgPattern = /src="(https:\/\/i\.roamcdn\.net\/[^"]+)"/g;
@@ -162,16 +186,21 @@ function parseCards(html: string): ImobiliareRawItem[] {
     return items;
 }
 
+/** Determine the highest page number from pagination links in the HTML. */
 function getLastPage(html: string, currentPage: number): number {
     let max = currentPage;
-    const pageRegex = /[?&]page=(\d+)/g;
-    let regExpExecArray: RegExpExecArray | null;
-    while ((regExpExecArray = pageRegex.exec(html)) !== null) {
-        const pageNumber = parseInt(regExpExecArray[1], 10);
-        if (pageNumber > max) max = pageNumber;
+    const re = /[?&]page=(\d+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null) {
+        const n = parseInt(m[1], 10);
+        if (n > max) max = n;
     }
     return max;
 }
+
+// ---------------------------------------------------------------------------
+// Scraper
+// ---------------------------------------------------------------------------
 
 @Injectable()
 export class ImobiliareRoScraper {
@@ -180,6 +209,9 @@ export class ImobiliareRoScraper {
         const citySlug = IMOBILIARE_CITY_MAP[cityKey] ?? cityKey;
         const baseUrl = `${IMOBILIARE_BASE}/${citySlug}`;
 
+        // imobiliare.ro has a dedicated SEO path for zero-commission / direct-owner listings:
+        //   /tip/inchirieri-apartamente-comision-0-{county-slug}-{city-slug}
+        // The city slug is just the normal slug with "/" replaced by "-".
         const base =
             forma === 'proprietar'
                 ? `https://www.imobiliare.ro/tip/inchirieri-apartamente-comision-0-${citySlug.replace('/', '-')}`
@@ -188,8 +220,8 @@ export class ImobiliareRoScraper {
         const allItems: ImobiliareRawItem[] = [];
         console.log(base)
 
-        for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {
-            const url = pageToScrape === 1 ? base : `${base}?page=${pageToScrape}`;
+        for (let p = 1; p <= MAX_PAGES; p++) {
+            const url = p === 1 ? base : `${base}?page=${p}`;
 
             let html: string;
             try {
@@ -206,14 +238,14 @@ export class ImobiliareRoScraper {
 
             const items = parseCards(html);
             if (items.length === 0) {
-                console.warn(`Imobiliare.ro: no cards on page ${pageToScrape} — stopping`);
+                console.warn(`Imobiliare.ro: no cards on page ${p} — stopping`);
                 break;
             }
 
             allItems.push(...items);
 
-            const lastPage = getLastPage(html, pageToScrape);
-            if (pageToScrape >= lastPage) break;
+            const lastPage = getLastPage(html, p);
+            if (p >= lastPage) break;
         }
 
         const filterNote = forma === 'proprietar' ? ' (zero-commission / proprietar filter)' : '';
