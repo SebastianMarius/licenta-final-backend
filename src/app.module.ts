@@ -7,7 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RentingPageModule } from './renting-page/renting-page.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, ListingsModule, RentingPageModule, RentingPageModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, ListingsModule, RentingPageModule],
   controllers: [AppController],
   providers: [AppService],
 })

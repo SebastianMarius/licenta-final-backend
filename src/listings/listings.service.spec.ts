@@ -1,4 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ListingsAggregator } from './listings-aggregator.service';
+import { ListingsEnricher } from './listings-enricher.service';
+import { ListingsRepository } from './listings-repository.service';
 import { ListingsService } from './listings.service';
 
 describe('ListingsService', () => {
@@ -6,7 +9,12 @@ describe('ListingsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ListingsService],
+      providers: [
+        ListingsService,
+        { provide: ListingsAggregator, useValue: {} },
+        { provide: ListingsRepository, useValue: {} },
+        { provide: ListingsEnricher, useValue: {} },
+      ],
     }).compile();
 
     service = module.get<ListingsService>(ListingsService);

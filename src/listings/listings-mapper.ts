@@ -1,3 +1,10 @@
+import type {
+  ImobiliareScrapedItem,
+  OlxScrapedItem,
+  Publi24ScrapedItem,
+  StoriaScrapedItem,
+} from './listings.types';
+
 const parseRoMonth: Record<string, number> = {
   ianuarie: 0, februarie: 1, martie: 2, aprilie: 3, mai: 4, iunie: 5,
   iulie: 6, august: 7, septembrie: 8, octombrie: 9, noiembrie: 10, decembrie: 11,
@@ -71,17 +78,6 @@ export function parseStoriaDate(raw: string | null | undefined): Date | null {
   return isNaN(date.getTime()) ? null : date;
 }
 
-export type OlxScrapedItem = {
-  index?: number;
-  title: string | null;
-  price: string | null;
-  location?: string;
-  date?: string;
-  url?: string;
-  image?: string | null;
-  squareMeters?: number | null;
-};
-
 export function parseOlxPrice(price: string | null | undefined): {
   value: number | null;
   currency: string;
@@ -114,17 +110,6 @@ export function mapOlxToListing(item: OlxScrapedItem, city: string) {
   };
 }
 
-export type Publi24ScrapedItem = {
-  index?: number;
-  title: string | null;
-  url?: string | null;
-  price?: string | null;
-  location?: string | null;
-  image?: string | null;
-  squareMeters?: number | null;
-  date?: string | null;
-};
-
 export function parsePubli24Price(price: string | null | undefined): {
   value: number | null;
   currency: string;
@@ -156,20 +141,6 @@ export function mapPubli24ToListing(item: Publi24ScrapedItem, city: string) {
     updatedAt: null,
   };
 }
-
-export type ImobiliareScrapedItem = {
-  externalId: string | null;
-  title: string | null;
-  price: string | null;
-  currency: string | null;
-  city: string | null;
-  locationId: string | null;
-  surface: string | null;
-  listId: string | null;
-  sellerType: string | null;
-  url: string | null;
-  imageUrls: string[];
-};
 
 export function parseImobiliarePrice(price: string | null | undefined): {
   value: number | null;
@@ -209,21 +180,6 @@ export function mapImobiliareToListing(item: ImobiliareScrapedItem, cityParam: s
     updatedAt: null,
   };
 }
-
-export type StoriaScrapedItem = {
-  id?: string | number;
-  title?: string | null;
-  location?: unknown;
-  images?: unknown;
-  isPrivateOwner?: boolean;
-  totalPrice?: { value?: number; currency?: string } | number | string | null;
-  areaInSquareMeters?: number | null;
-  shortDescription?: string | null;
-  slug?: string | null;
-  url?: string | null;
-  dateCreated?: string | null;
-  createdAtFirst?: string | null;
-};
 
 export function mapStoriaToListing(item: StoriaScrapedItem, cityParam: string) {
   const loc = item.location as any;
