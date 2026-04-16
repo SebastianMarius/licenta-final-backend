@@ -175,21 +175,27 @@ function getLastPage(html: string, currentPage: number): number {
 
 @Injectable()
 export class ImobiliareRoScraper {
-    async scrape(city: string, forma?: string): Promise<ImobiliareRawItem[]> {
+    async scrape(city: string, forma?: string, minRoms?: number): Promise<ImobiliareRawItem[]> {
         const cityKey = city.toLowerCase();
         const citySlug = IMOBILIARE_CITY_MAP[cityKey] ?? cityKey;
-        const baseUrl = `${IMOBILIARE_BASE}/${citySlug}`;
+        const baseUrl = `${IMOBILIARE_BASE}/${citySlug}/${minRoms}-camere`;
 
-        const base =
-            forma === 'proprietar'
-                ? `https://www.imobiliare.ro/tip/inchirieri-apartamente-comision-0-${citySlug.replace('/', '-')}`
-                : baseUrl;
+        let base: string;
+        if (forma !== 'proprietar') {
+            base = baseUrl;
+        } else if (minRoms) {
+            base = `${IMOBILIARE_BASE}/${citySlug}/${minRoms}-camere?feature=zero-commission`;
+        } else {
+            const citySegment = citySlug.replace('/', '-');
+            base = `https://www.imobiliare.ro/tip/inchirieri-apartamente-comision-0-${citySegment}`;
+        }
 
         const allItems: ImobiliareRawItem[] = [];
         console.log(base)
 
         for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {
-            const url = pageToScrape === 1 ? base : `${base}?page=${pageToScrape}`;
+            const pageSep = base.includes('?') ? '&' : '?';
+            const url = pageToScrape === 1 ? base : `${base}${pageSep}page=${pageToScrape}`;
 
             let html: string;
             try {

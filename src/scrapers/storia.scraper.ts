@@ -91,10 +91,12 @@ const STORIA_BASE = "https://www.storia.ro/ro/rezultate/inchiriere/apartament";
 
 const MAX_PAGES = 10;
 
+const roomNumbersLocal =["ONE","TWO","THREE","FOUR"];
+
 @Injectable()
 export class StoriaScrapper {
 
-    async scrape(city: string, forma?: string) {
+    async scrape(city: string, forma?: string, minRoms?: number) {
         const citySlug = STORIA_CITY_MAP[city.toLowerCase()] ?? `${city}/${city}`;
         const baseUrl = `${STORIA_BASE}/${citySlug}`;
         const browser = await puppeteer.launch({
@@ -161,7 +163,14 @@ export class StoriaScrapper {
                         ? stamped.filter((item: any) => item.isPrivateOwner)
                         : stamped;
 
-                allItems.push(...filtered);
+                const filteredBasedOnRooms =
+                    minRoms != null
+                        ? filtered.filter(
+                              (item: any) =>
+                                  item.roomsNumber === roomNumbersLocal[minRoms - 1],
+                          )
+                        : filtered;
+                allItems.push(...filteredBasedOnRooms);
                 globalIndex += items.length;
 
                 if (pageToScrape >= totalPages) break;

@@ -20,9 +20,11 @@ export class ListingsService {
     forma?: string,
     minPrice?: number | string,
     maxPrice?: number | string,
+    minRoms?: number
   ) {
     const searchCity = city.trim().toLowerCase();
     const formaKey = forma ?? '';
+    const roomsKey = minRoms ?? '';
 
     let minP = numBound(minPrice, 0);
     let maxP = numBound(maxPrice, 9_999_999);
@@ -37,7 +39,7 @@ export class ListingsService {
       return this.enricher.enrichPayload(filtered, city, prismaMap);
     }
 
-    const payload = await this.aggregator.fetchAll(city, forma);
+    const payload = await this.aggregator.fetchAll(city, forma, minRoms);
 
     await this.repository.createManyListings(this.enricher.toCreateManyInput(payload, city));
 

@@ -21,12 +21,12 @@ export class ListingsAggregator {
   ) {}
 
   /** Runs all scrapers in parallel; returns raw typed payload (same casts as before). */
-  async fetchAll(city: string, forma?: string): Promise<ListingsPayload> {
+  async fetchAll(city: string, forma?: string, minRoms?: number): Promise<ListingsPayload> {
     const [olx, storia, publi24, imobiliare] = await Promise.all([
-      this.olxScraper.scrape(city, forma),
-      this.storiaScrapper.scrape(city, forma),
-      this.publi24Scraper.scrape(city, forma),
-      this.imobiliareRoScraper.scrape(city, forma),
+      this.olxScraper.scrape(city, forma, minRoms),
+      this.storiaScrapper.scrape(city, forma, minRoms),
+      this.publi24Scraper.scrape(city, forma, minRoms),
+      this.imobiliareRoScraper.scrape(city, forma, minRoms),
     ]);
 
     return {

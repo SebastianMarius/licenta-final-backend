@@ -9,10 +9,11 @@ const MAX_PAGES = 2;
 
 @Injectable()
 export class OlxScraper {
-    async scrape(city: string | null, forma?: string) {
+    async scrape(city: string | null, forma?: string, minRoms? : number) {
 
         const rentType = forma === 'proprietar' ? 'q-direct-proprietar/' : '';
-        const baseUrl = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-inchiriat/${city}/${rentType}`;
+        const roomsSegment = minRoms != null ? `${minRoms}-camere/` : '';
+        const baseUrl = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-inchiriat/${roomsSegment}${city}/${rentType}`;
 
         console.log(baseUrl);
         const browser = await puppeteer.launch({

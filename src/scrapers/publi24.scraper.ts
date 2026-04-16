@@ -91,10 +91,12 @@ const MAX_PAGES = 10;
 
 @Injectable()
 export class Publi24Scraper {
-    async scrape(city: string, forma?: string) {
+    async scrape(city: string, forma?: string, minRoms?: number) {
         const countySlug = PUBLI24_CITY_MAP[city.toLowerCase()] ?? city.toLowerCase();
-        const baseUrl = `${PUBLI24_BASE}/${countySlug}/`;
+        const roomsSegment = minRoms != null ? `apartamente-${minRoms}-camere/` : "";
+        const baseUrl = `${PUBLI24_BASE}/${roomsSegment}${countySlug}/`;
 
+        console.log(baseUrl);
         const browser = await puppeteer.launch({
             headless: true,
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
