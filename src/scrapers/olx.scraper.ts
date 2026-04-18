@@ -5,7 +5,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 puppeteer.use(StealthPlugin());
 
 //debugging
-const MAX_PAGES = 2;
+const MAX_PAGES = 10;
 
 @Injectable()
 export class OlxScraper {
@@ -86,7 +86,6 @@ export class OlxScraper {
                 }
             }
             console.log(`Olx: collected ${allListings.length} items`);
-
             return allListings;
         } finally {
             await browser.close();

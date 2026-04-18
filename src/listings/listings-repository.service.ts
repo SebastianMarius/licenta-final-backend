@@ -6,16 +6,21 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ListingsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findScrapeCache(searchCity: string, forma: string) {
+  findScrapeCache(searchCity: string, forma: string, minRoms: number) {
     return this.prisma.listingScrapeCache.findUnique({
-      where: { searchCity_forma: { searchCity, forma } },
+      where: { searchCity_forma_minRoms: { searchCity, forma, minRoms } },
     });
   }
 
-  upsertScrapeCache(searchCity: string, forma: string, payload: Prisma.InputJsonValue) {
+  upsertScrapeCache(
+    searchCity: string,
+    forma: string,
+    minRoms: number,
+    payload: Prisma.InputJsonValue,
+  ) {
     return this.prisma.listingScrapeCache.upsert({
-      where: { searchCity_forma: { searchCity, forma } },
-      create: { searchCity, forma, payload },
+      where: { searchCity_forma_minRoms: { searchCity, forma, minRoms } },
+      create: { searchCity, forma, minRoms, payload },
       update: { scrapedAt: new Date(), payload },
     });
   }

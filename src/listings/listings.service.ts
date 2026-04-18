@@ -20,17 +20,17 @@ export class ListingsService {
     forma?: string,
     minPrice?: number | string,
     maxPrice?: number | string,
-    minRoms?: number
+    minRoms?: number | string,
   ) {
     const searchCity = city.trim().toLowerCase();
     const formaKey = forma ?? '';
-    const roomsKey = minRoms ?? '';
+    const roomsKey = Math.max(0, Math.floor(numBound(minRoms, 0)));
 
     let minP = numBound(minPrice, 0);
     let maxP = numBound(maxPrice, 9_999_999);
     if (minP > maxP) [minP, maxP] = [maxP, minP];
 
-    const cached = await this.repository.findScrapeCache(searchCity, formaKey);
+    const cached = await this.repository.findScrapeCache(searchCity, formaKey, roomsKey);
     if (cached && Date.now() - cached.scrapedAt.getTime() < LISTINGS_CACHE_MS) {
       const filtered = filterListingsByPrice(cached.payload as ListingsPayload, minP, maxP);
       const prismaMap = await this.repository.getIdMapByExternalIds(
@@ -39,12 +39,12 @@ export class ListingsService {
       return this.enricher.enrichPayload(filtered, city, prismaMap);
     }
 
-    const payload = await this.aggregator.fetchAll(city, forma, minRoms);
+    const payload = await this.aggregator.fetchAll(city, forma, roomsKey);
 
     await this.repository.createManyListings(this.enricher.toCreateManyInput(payload, city));
 
     const jsonPayload = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
-    await this.repository.upsertScrapeCache(searchCity, formaKey, jsonPayload);
+    await this.repository.upsertScrapeCache(searchCity, formaKey, roomsKey, jsonPayload);
 
     const filtered = filterListingsByPrice(payload, minP, maxP);
     const prismaMap = await this.repository.getIdMapByExternalIds(

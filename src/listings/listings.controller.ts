@@ -22,7 +22,7 @@ export class ListingsController {
         @Query('forma') forma?: string,
         @Query('minPrice') minPrice?: string,
         @Query('maxPrice') maxPrice?: string,
-        @Query('minRoms') minRoms? : number, 
+        @Query('minRoms') minRoms?: string,
     ) {
         return this.listingService.getAllListings(city, forma, minPrice, maxPrice, minRoms);
     }
