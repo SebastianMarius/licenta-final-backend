@@ -32,8 +32,11 @@ COPY prisma ./prisma
 
 RUN npm install
 
-# Step 6: Copy source code
+# Step 6: Copy source code (may refresh prisma/schema.prisma vs layer above)
 COPY . .
+
+# Regenerate client so runtime matches final schema (COPY . can replace prisma files after npm install / postinstall)
+RUN npx prisma generate
 
 # Step 7: Build the project
 # RUN npm run build

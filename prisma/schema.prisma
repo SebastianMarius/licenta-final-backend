@@ -37,8 +37,9 @@ model ListingScrapeCache {
   id          String   @id @default(cuid())
   searchCity  String
   forma       String   @default("")
+  minRoms     Int      @default(0)
   scrapedAt   DateTime @default(now())
   payload     Json
 
-  @@unique([searchCity, forma])
+  @@unique([searchCity, forma, minRoms])
 }
