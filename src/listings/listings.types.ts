@@ -5,7 +5,7 @@ export type OlxScrapedItem = {
   location?: string;
   date?: string;
   url?: string;
-  image?: string | null;
+  imageUrls: string[];
   squareMeters?: number | null;
 };
 
@@ -15,7 +15,7 @@ export type Publi24ScrapedItem = {
   url?: string | null;
   price?: string | null;
   location?: string | null;
-  image?: string | null;
+  imageUrls: string[];
   squareMeters?: number | null;
   date?: string | null;
 };
@@ -39,6 +39,7 @@ export type StoriaScrapedItem = {
   title?: string | null;
   location?: unknown;
   images?: unknown;
+  imageUrls?: string[];
   isPrivateOwner?: boolean;
   price?: string | null;
   totalPrice?: { value?: number; currency?: string } | number | string | null;

@@ -5,8 +5,19 @@ import {
   mapStoriaToListing,
   mapPubli24ToListing,
   mapImobiliareToListing,
+  parseOlxDate,
+  parsePubli24Date,
+  parseStoriaDate,
 } from './listings-mapper';
 import type { ListingsPayload } from './listings.types';
+
+function listingDateMs(row: object): number | null {
+  if (!('date' in row)) return null;
+  const date = (row as { date?: unknown }).date;
+  if (typeof date !== 'string' || !date) return null;
+  const ms = new Date(date).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
 
 @Injectable()
 export class ListingsEnricher {
@@ -31,12 +42,40 @@ export class ListingsEnricher {
   }
 
   enrichPayload(payload: ListingsPayload, city: string, prisma: Map<string, string>) {
-    return [
+    const rows = [
       ...this.enrich(payload.olx, city, 'olx', mapOlxToListing, prisma),
       ...this.enrich(payload.storia, city, 'storia', mapStoriaToListing, prisma),
       ...this.enrich(payload.publi24, city, 'publi24', mapPubli24ToListing, prisma),
       ...this.enrich(payload.imobiliare, city, 'imobiliare', mapImobiliareToListing, prisma),
     ];
+
+    const rowsWithDateParsed =  rows.map((row) => {
+      if (!('date' in row) || typeof row.date !== 'string' || !row.date) return row;
+
+      let parsed: Date | null = null;
+      if (row.source === 'olx') parsed = parseOlxDate(row.date);
+      else if (row.source === 'publi24') parsed = parsePubli24Date(row.date);
+      else if (row.source === 'storia') parsed = parseStoriaDate(row.date);
+      else return row;
+
+      if (!parsed || Number.isNaN(parsed.getTime())) return row;
+      return { ...row, date: parsed.toISOString() };
+    });
+
+    return rowsWithDateParsed.sort((a, b) => {
+      const aTime = listingDateMs(a);
+      const bTime = listingDateMs(b);
+    
+      // both missing → keep original order
+      if (aTime === null && bTime === null) return 0;
+    
+      // missing date goes last
+      if (aTime === null) return 1;
+      if (bTime === null) return -1;
+    
+      // normal sort (newest first)
+      return bTime - aTime;
+    });
   }
 
   private enrich<T>(

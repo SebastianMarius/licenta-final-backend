@@ -157,7 +157,7 @@ export class Publi24Scraper {
                         const areaText = areaEl?.innerText?.trim() ?? null;
 
                         const imgEl = card.querySelector(".art-img img") as HTMLImageElement | null;
-                        const image = imgEl?.src ?? null;
+                        const imageUrls = imgEl?.src ? [imgEl.src] : [];
 
                         const dateEl = card.querySelector(".article-date span") as HTMLElement | null;
                         const date = dateEl?.innerText?.trim() ?? null;
@@ -171,7 +171,7 @@ export class Publi24Scraper {
                             }
                         }
 
-                        return { title, url, price, location, image, squareMeters, date };
+                        return { title, url, price, location, imageUrls, squareMeters, date };
                     });
 
                     let totalPages = pageNum;

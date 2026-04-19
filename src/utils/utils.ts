@@ -1,3 +1,5 @@
+import { extractStoriaImageUrls } from 'src/listings/listings-mapper';
+
 function formatStoriaAddress(location: unknown): string {
     const loc = location as {
         address?: {
@@ -17,6 +19,9 @@ function formatStoriaAddress(location: unknown): string {
 
 export function normaliseStoria(storiaList) {
     return storiaList.map((listing) => {
+        const { images, ...listingWithoutImages } = listing;
+        const imageUrls = extractStoriaImageUrls(images);
+
         const sqmRaw = listing.areaInSquareMeters;
         const squareMeters =
             typeof sqmRaw === 'number' && Number.isFinite(sqmRaw) ? sqmRaw : null;
@@ -34,17 +39,12 @@ export function normaliseStoria(storiaList) {
                 : null;
 
         return {
-            ...listing,
+            ...listingWithoutImages,
             price,
             location: formatStoriaAddress(listing.location),
             date: listing.dateCreated,
             squareMeters,
+            imageUrls,
         };
     });
 }
-
-// function normalizeDate(date) {
-//     if(date.toLowerCase().include('azi')){
-
-//     }
-// }

@@ -78,6 +78,13 @@ export function parseStoriaDate(raw: string | null | undefined): Date | null {
   return isNaN(date.getTime()) ? null : date;
 }
 
+export function extractStoriaImageUrls(images: unknown): string[] {
+  if (!Array.isArray(images)) return [];
+  return (images as { large?: string; medium?: string; url?: string }[])
+    .map((img) => img?.large ?? img?.medium ?? img?.url)
+    .filter((u): u is string => typeof u === 'string');
+}
+
 export function parseOlxPrice(price: string | null | undefined): {
   value: number | null;
   currency: string;
@@ -103,7 +110,7 @@ export function mapOlxToListing(item: OlxScrapedItem, city: string) {
     city: item.location ?? city,
     address: item.location ?? null,
     areaSqm: item.squareMeters != null ? String(item.squareMeters) : undefined,
-    imageUrls: item.image ? [item.image] : [],
+    imageUrls: item.imageUrls ?? [],
     rawPayload: item as object,
     createdAt: parseOlxDate(item.date) ?? null,
     updatedAt: null,
@@ -135,7 +142,7 @@ export function mapPubli24ToListing(item: Publi24ScrapedItem, city: string) {
     city: item.location ?? city,
     address: item.location ?? null,
     areaSqm: item.squareMeters != null ? String(item.squareMeters) : undefined,
-    imageUrls: item.image ? [item.image] : [],
+    imageUrls: item.imageUrls ?? [],
     rawPayload: item as object,
     createdAt: parsePubli24Date(item.date) ?? null,
     updatedAt: null,
@@ -201,11 +208,8 @@ export function mapStoriaToListing(item: StoriaScrapedItem, cityParam: string) {
       ? (totalPrice.currency ?? 'RON')
       : 'RON';
 
-  const images = Array.isArray(item.images)
-    ? (item.images as any[])
-        .map((img) => img.large ?? img.medium ?? img.url)
-        .filter((u): u is string => typeof u === 'string')
-    : [];
+  const imageUrls =
+    item.imageUrls?.length ? item.imageUrls : extractStoriaImageUrls(item.images);
 
   const slug = item.slug?.trim();
   const slugPart = slug
@@ -233,7 +237,7 @@ export function mapStoriaToListing(item: StoriaScrapedItem, cityParam: string) {
     city,
     address: city,
     areaSqm: item.squareMeters != null ? String(item.squareMeters) : undefined,
-    imageUrls: images,
+    imageUrls,
     rawPayload: item as object,
     createdAt: parseStoriaDate(item.createdAtFirst ?? item.dateCreated) ?? null,
     updatedAt: parseStoriaDate(item.dateCreated) ?? null,
