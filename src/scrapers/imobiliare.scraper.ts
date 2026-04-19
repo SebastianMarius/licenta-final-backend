@@ -184,12 +184,14 @@ export class ImobiliareRoScraper {
     async scrape(city: string, forma?: string, minRoms?: number): Promise<ImobiliareScrapedItem[]> {
         const cityKey = city.toLowerCase();
         const citySlug = IMOBILIARE_CITY_MAP[cityKey] ?? cityKey;
-        const baseUrl = `${IMOBILIARE_BASE}/${citySlug}/${minRoms}-camere`;
+        const useRoomsInPath = minRoms != null && minRoms > 1;
 
         let base: string;
         if (forma !== 'proprietar') {
-            base = baseUrl;
-        } else if (minRoms) {
+            base = useRoomsInPath
+                ? `${IMOBILIARE_BASE}/${citySlug}/${minRoms}-camere`
+                : `${IMOBILIARE_BASE}/${citySlug}`;
+        } else if (useRoomsInPath) {
             base = `${IMOBILIARE_BASE}/${citySlug}/${minRoms}-camere?feature=zero-commission`;
         } else {
             const citySegment = citySlug.replace('/', '-');

@@ -42,3 +42,9 @@ export function normaliseStoria(storiaList) {
         };
     });
 }
+
+// function normalizeDate(date) {
+//     if(date.toLowerCase().include('azi')){
+
+//     }
+// }

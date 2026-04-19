@@ -165,7 +165,7 @@ export class StoriaScrapper {
                         : stamped;
 
                 const filteredBasedOnRooms =
-                    minRoms != null
+                    minRoms != null && minRoms > 1
                         ? filtered.filter(
                               (item: any) =>
                                   item.roomsNumber === roomNumbersLocal[minRoms - 1],

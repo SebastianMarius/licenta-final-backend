@@ -12,7 +12,8 @@ export class OlxScraper {
     async scrape(city: string | null, forma?: string, minRoms? : number) {
 
         const rentType = forma === 'proprietar' ? 'q-direct-proprietar/' : '';
-        const roomsSegment = minRoms != null ? `${minRoms}-camere/` : '';
+        const roomsSegment =
+            minRoms != null && minRoms > 1 ? `${minRoms}-camere/` : '';
         const baseUrl = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-inchiriat/${roomsSegment}${city}/${rentType}`;
 
         console.log(baseUrl);

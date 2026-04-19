@@ -93,7 +93,8 @@ const MAX_PAGES = 10;
 export class Publi24Scraper {
     async scrape(city: string, forma?: string, minRoms?: number) {
         const countySlug = PUBLI24_CITY_MAP[city.toLowerCase()] ?? city.toLowerCase();
-        const roomsSegment = minRoms != null ? `apartamente-${minRoms}-camere/` : "";
+        const roomsSegment =
+            minRoms != null && minRoms > 1 ? `apartamente-${minRoms}-camere/` : "";
         const baseUrl = `${PUBLI24_BASE}/${roomsSegment}${countySlug}/`;
 
         console.log(baseUrl);
