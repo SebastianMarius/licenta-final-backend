@@ -157,11 +157,10 @@ export function mapImobiliareToListing(item: ImobiliareScrapedItem, cityParam: s
 
   const city = item.city ?? cityParam;
 
-  let areaSqm: string | undefined;
-  if (item.surface && item.surface !== 'not applicable') {
-    const sqm = parseFloat(item.surface);
-    if (!Number.isNaN(sqm) && sqm > 0) areaSqm = String(sqm);
-  }
+  const areaSqm =
+    item.squareMeters != null && item.squareMeters > 0
+      ? String(item.squareMeters)
+      : undefined;
 
   return {
     externalId: item.externalId ?? `imobiliare-${cityParam}-${(item.title ?? '').slice(0, 50)}`,
@@ -233,7 +232,7 @@ export function mapStoriaToListing(item: StoriaScrapedItem, cityParam: string) {
     currency,
     city,
     address: city,
-    areaSqm: item.areaInSquareMeters != null ? String(item.areaInSquareMeters) : undefined,
+    areaSqm: item.squareMeters != null ? String(item.squareMeters) : undefined,
     imageUrls: images,
     rawPayload: item as object,
     createdAt: parseStoriaDate(item.createdAtFirst ?? item.dateCreated) ?? null,

@@ -31,12 +31,12 @@ export class ListingsEnricher {
   }
 
   enrichPayload(payload: ListingsPayload, city: string, prisma: Map<string, string>) {
-    return {
-      olx: this.enrich(payload.olx, city, 'olx', mapOlxToListing, prisma),
-      storia: this.enrich(payload.storia, city, 'storia', mapStoriaToListing, prisma),
-      publi24: this.enrich(payload.publi24, city, 'publi24', mapPubli24ToListing, prisma),
-      imobiliare: this.enrich(payload.imobiliare, city, 'imobiliare', mapImobiliareToListing, prisma),
-    };
+    return [
+      ...this.enrich(payload.olx, city, 'olx', mapOlxToListing, prisma),
+      ...this.enrich(payload.storia, city, 'storia', mapStoriaToListing, prisma),
+      ...this.enrich(payload.publi24, city, 'publi24', mapPubli24ToListing, prisma),
+      ...this.enrich(payload.imobiliare, city, 'imobiliare', mapImobiliareToListing, prisma),
+    ];
   }
 
   private enrich<T>(

@@ -27,7 +27,7 @@ export type ImobiliareScrapedItem = {
   currency: string | null;
   city: string | null;
   locationId: string | null;
-  surface: string | null;
+  squareMeters: number | null;
   listId: string | null;
   sellerType: string | null;
   url: string | null;
@@ -40,11 +40,13 @@ export type StoriaScrapedItem = {
   location?: unknown;
   images?: unknown;
   isPrivateOwner?: boolean;
+  price?: string | null;
   totalPrice?: { value?: number; currency?: string } | number | string | null;
-  areaInSquareMeters?: number | null;
+  squareMeters?: number | null;
   shortDescription?: string | null;
   slug?: string | null;
   url?: string | null;
+  date?: string | null;
   dateCreated?: string | null;
   createdAtFirst?: string | null;
 };

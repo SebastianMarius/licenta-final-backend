@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import type { ImobiliareScrapedItem } from 'src/listings/listings.types';
 
 const IMOBILIARE_CITY_MAP: Record<string, string> = {
     'alba-iulia':            'judetul-alba/alba-iulia',
@@ -94,20 +95,6 @@ const REQUEST_HEADERS = {
     Pragma: 'no-cache',
 };
 
-export type ImobiliareRawItem = {
-    externalId: string | null;
-    title: string | null;
-    price: string | null;
-    currency: string | null;
-    city: string | null;
-    locationId: string | null;
-    surface: string | null;
-    listId: string | null;
-    sellerType: string | null;
-    url: string | null;
-    imageUrls: string[];
-};
-
 function getAttributeValue(tag: string, name: string): string | null {
     const match = tag.match(new RegExp(`${name}="([^"]*)"`));
     return match ? decodeHtmlEntities(match[1]) : null;
@@ -122,8 +109,15 @@ function decodeHtmlEntities(text: string): string {
         .replace(/&#39;/g, "'");
 }
 
-function parseCards(html: string): ImobiliareRawItem[] {
-    const items: ImobiliareRawItem[] = [];
+function parseSurfaceToSquareMeters(surfaceRaw: string | null): number | null {
+    if (!surfaceRaw || surfaceRaw === 'not applicable') return null;
+    const sqm = parseFloat(surfaceRaw);
+    if (Number.isNaN(sqm) || sqm <= 0) return null;
+    return sqm;
+}
+
+function parseCards(html: string): ImobiliareScrapedItem[] {
+    const items: ImobiliareScrapedItem[] = [];
 
     const tagPattern = /<div[^>]+data-bi="product-basic"[^>]+>/g;
     let match: RegExpExecArray | null;
@@ -138,7 +132,7 @@ function parseCards(html: string): ImobiliareRawItem[] {
         const currency = getAttributeValue(tag, 'data-bi-listing-currency');
         const city = getAttributeValue(tag, 'data-city');
         const locationId = getAttributeValue(tag, 'data-location-id');
-        const surface = getAttributeValue(tag, 'data-surface');
+        const squareMeters = parseSurfaceToSquareMeters(getAttributeValue(tag, 'data-surface'));
         const listId = getAttributeValue(tag, 'data-list-id');
         const sellerType = getAttributeValue(tag, 'data-sellertype');
 
@@ -156,7 +150,19 @@ function parseCards(html: string): ImobiliareRawItem[] {
             imageUrls.push(imgM[1]);
         }
 
-        items.push({ externalId, title, price, currency, city, locationId, surface, listId, sellerType, url, imageUrls });
+        items.push({
+            externalId,
+            title,
+            price,
+            currency,
+            city,
+            locationId,
+            squareMeters,
+            listId,
+            sellerType,
+            url,
+            imageUrls,
+        });
     }
 
     return items;
@@ -175,7 +181,7 @@ function getLastPage(html: string, currentPage: number): number {
 
 @Injectable()
 export class ImobiliareRoScraper {
-    async scrape(city: string, forma?: string, minRoms?: number): Promise<ImobiliareRawItem[]> {
+    async scrape(city: string, forma?: string, minRoms?: number): Promise<ImobiliareScrapedItem[]> {
         const cityKey = city.toLowerCase();
         const citySlug = IMOBILIARE_CITY_MAP[cityKey] ?? cityKey;
         const baseUrl = `${IMOBILIARE_BASE}/${citySlug}/${minRoms}-camere`;
@@ -190,7 +196,7 @@ export class ImobiliareRoScraper {
             base = `https://www.imobiliare.ro/tip/inchirieri-apartamente-comision-0-${citySegment}`;
         }
 
-        const allItems: ImobiliareRawItem[] = [];
+        const allItems: ImobiliareScrapedItem[] = [];
         console.log(base)
 
         for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {

@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { normaliseStoria } from "src/utils/utils";
 puppeteer.use(StealthPlugin());
 
 const STORIA_CITY_MAP: Record<string, string> = {
@@ -177,7 +178,8 @@ export class StoriaScrapper {
             }
 
             console.log(`Storia scraper: collected ${allItems.length} items`);
-            return allItems;
+            // return allItems;
+            return normaliseStoria(allItems);
         } finally {
             await browser.close();
         }
