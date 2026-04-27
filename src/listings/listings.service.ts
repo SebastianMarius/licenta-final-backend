@@ -13,7 +13,7 @@ export class ListingsService {
     private readonly aggregator: ListingsAggregator,
     private readonly repository: ListingsRepository,
     private readonly enricher: ListingsEnricher,
-  ) {}
+  ) { }
 
   async getAllListings(
     city: string,
@@ -21,6 +21,8 @@ export class ListingsService {
     minPrice?: number | string,
     maxPrice?: number | string,
     minRoms?: number | string,
+    sortingMethod?: string,
+    rentSouce?: string | undefined,
   ) {
     const searchCity = city.trim().toLowerCase();
     const formaKey = forma ?? '';
@@ -36,7 +38,7 @@ export class ListingsService {
       const prismaMap = await this.repository.getIdMapByExternalIds(
         this.enricher.externalIdsForPayload(filtered, city),
       );
-      return this.enricher.enrichPayload(filtered, city, prismaMap);
+      return this.enricher.enrichPayload(filtered, city, prismaMap, sortingMethod, rentSouce);
     }
 
     const payload = await this.aggregator.fetchAll(city, forma, roomsKey);
@@ -50,6 +52,8 @@ export class ListingsService {
     const prismaMap = await this.repository.getIdMapByExternalIds(
       this.enricher.externalIdsForPayload(filtered, city),
     );
-    return this.enricher.enrichPayload(filtered, city, prismaMap);
+
+
+    return this.enricher.enrichPayload(filtered, city, prismaMap, sortingMethod, rentSouce,);
   }
 }

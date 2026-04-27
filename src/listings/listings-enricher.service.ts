@@ -41,7 +41,7 @@ export class ListingsEnricher {
     ];
   }
 
-  enrichPayload(payload: ListingsPayload, city: string, prisma: Map<string, string>) {
+  enrichPayload(payload: ListingsPayload, city: string, prisma: Map<string, string>, sortingMethod: string = 'date', rentSouce: string | undefined) {
     const rows = [
       ...this.enrich(payload.olx, city, 'olx', mapOlxToListing, prisma),
       ...this.enrich(payload.storia, city, 'storia', mapStoriaToListing, prisma),
@@ -49,7 +49,20 @@ export class ListingsEnricher {
       ...this.enrich(payload.imobiliare, city, 'imobiliare', mapImobiliareToListing, prisma),
     ];
 
-    const rowsWithDateParsed =  rows.map((row) => {
+    const uniqueRows = Array.from(
+      new Map(
+        rows.map(item => [
+          `${item.title}-${item.price}-${item.squareMeters}`,
+          item
+        ])
+      ).values()
+    );
+
+    const filteredRows = rentSouce
+      ? uniqueRows.filter(item => item.source === rentSouce)
+      : uniqueRows;
+
+    const rowsWithDateParsed = filteredRows.map((row) => {
       if (!('date' in row) || typeof row.date !== 'string' || !row.date) return row;
 
       let parsed: Date | null = null;
@@ -62,20 +75,79 @@ export class ListingsEnricher {
       return { ...row, date: parsed.toISOString() };
     });
 
-    return rowsWithDateParsed.sort((a, b) => {
-      const aTime = listingDateMs(a);
-      const bTime = listingDateMs(b);
-    
-      // both missing → keep original order
-      if (aTime === null && bTime === null) return 0;
-    
-      // missing date goes last
-      if (aTime === null) return 1;
-      if (bTime === null) return -1;
-    
-      // normal sort (newest first)
-      return bTime - aTime;
-    });
+    const sortByDate = () => {
+      return [...rowsWithDateParsed].sort((a, b) => {
+        const aTime = listingDateMs(a);
+        const bTime = listingDateMs(b);
+
+        // both missing → keep original order
+        if (aTime === null && bTime === null) return 0;
+
+        // missing date goes last
+        if (aTime === null) return 1;
+        if (bTime === null) return -1;
+
+        // normal sort (newest first)
+        return bTime - aTime;
+      });
+    }
+
+    const sortByPrice = (option = 'price_asc') => {
+      return [...rowsWithDateParsed].sort((a, b) => {
+        const aPrice = Number(a.price) ?? null;
+        const bPrice = Number(b.price) ?? null;
+
+        const aInvalid = Number.isNaN(aPrice);
+        const bInvalid = Number.isNaN(bPrice);
+        // invalid goes last
+        if (aInvalid) return 1;
+        if (bInvalid) return -1;
+
+        if (aPrice === null && bPrice === null) return 0;
+        if (aPrice === null) return 1;
+        if (bPrice === null) return -1;
+
+        return option === 'price_asc' ? aPrice - bPrice : bPrice - aPrice;
+      });
+    };
+
+    // squareMeters
+    const sortByArea = () => {
+      return [...rowsWithDateParsed].sort((a, b) => {
+        const aSquareMeters = (a.squareMeters) ?? null;
+        const bSquareMeters = (b.squareMeters) ?? null;
+
+        if (aSquareMeters === null && bSquareMeters === null) return 0;
+        if (aSquareMeters === null) return 1;
+        if (bSquareMeters === null) return -1;
+
+        return bSquareMeters - aSquareMeters;
+      });
+    }
+
+    let sortedItems;
+
+    switch (sortingMethod) {
+      case "date": {
+        sortedItems = sortByDate();
+        break;
+      }
+      case "price_asc": {
+        sortedItems = sortByPrice("price_asc");
+        break;
+      }
+      case "price_desc": {
+        sortedItems = sortByPrice("price_desc");
+        break;
+      }
+      case "area": {
+        sortedItems = sortByArea();
+        break;
+      }
+
+    }
+
+    return sortedItems
   }
 
   private enrich<T>(

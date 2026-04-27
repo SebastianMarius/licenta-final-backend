@@ -9,7 +9,7 @@ const MAX_PAGES = 10;
 
 @Injectable()
 export class OlxScraper {
-    async scrape(city: string | null, forma?: string, minRoms? : number) {
+    async scrape(city: string | null, forma?: string, minRoms?: number) {
 
         const rentType = forma === 'proprietar' ? 'q-direct-proprietar/' : '';
         const roomsSegment =
@@ -52,8 +52,8 @@ export class OlxScraper {
                     await page.waitForSelector('[data-cy="l-card"]', { timeout: 15000 });
                 } catch {
                     const diagTitle = await page.title().catch(() => '?');
-                    const diagUrl   = page.url();
-                    const diagBody  = await page.evaluate(() => document.body?.innerText?.slice(0, 200) ?? '').catch(() => '');
+                    const diagUrl = page.url();
+                    const diagBody = await page.evaluate(() => document.body?.innerText?.slice(0, 200) ?? '').catch(() => '');
                     console.warn(`OLX: no cards on page ${pageToScrape} — title="${diagTitle}" url=${diagUrl} body="${diagBody}"`);
                     break;
                 }

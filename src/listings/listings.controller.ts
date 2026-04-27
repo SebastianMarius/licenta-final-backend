@@ -23,7 +23,9 @@ export class ListingsController {
         @Query('minPrice') minPrice?: string,
         @Query('maxPrice') maxPrice?: string,
         @Query('minRoms') minRoms?: string,
+        @Query('sortingMethod') sortingMethod?: string,
+        @Query('rentSource') rentSouce?: string
     ) {
-        return this.listingService.getAllListings(city, forma, minPrice, maxPrice, minRoms);
+        return this.listingService.getAllListings(city, forma, minPrice, maxPrice, minRoms, sortingMethod, rentSouce);
     }
 }
