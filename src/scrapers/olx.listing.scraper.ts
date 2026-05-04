@@ -1,7 +1,40 @@
 import { Injectable } from "@nestjs/common";
+import vm from "node:vm";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 puppeteer.use(StealthPlugin());
+
+const SSR_MARKER = "window.__PRERENDERED_STATE__=";
+
+/** Listing detail pages embed all gallery URLs in `ad.ad.photos` (JSON-LD usually has only one). */
+function extractOlxListingPhotosFromHtml(html: string): string[] {
+    try {
+        const i = html.indexOf(SSR_MARKER);
+        if (i < 0) return [];
+        let end = html.indexOf("window.__TAURUS__=", i);
+        if (end < 0) end = html.indexOf("window.__PAGE_TRANSLATIONS__=", i);
+        if (end < 0) return [];
+        let chunk = html.slice(i + SSR_MARKER.length, end).trim();
+        if (chunk.endsWith(";")) chunk = chunk.slice(0, -1).trim();
+        const jsonText = vm.runInNewContext(chunk) as string;
+        const raw = JSON.parse(jsonText)?.ad?.ad?.photos;
+        if (!Array.isArray(raw)) return [];
+        const out: string[] = [];
+        for (const p of raw) {
+            if (typeof p === "string" && p.startsWith("http")) out.push(p);
+            else if (p && typeof p === "object") {
+                const v =
+                    (p as { link?: string }).link ??
+                    (p as { url?: string }).url ??
+                    (p as { href?: string }).href;
+                if (typeof v === "string" && v.startsWith("http")) out.push(v);
+            }
+        }
+        return [...new Set(out)];
+    } catch {
+        return [];
+    }
+}
 
 export interface OlxListing {
     title: string | null;
@@ -150,6 +183,9 @@ export class OlxListingScrapper {
                     details: { squareMeters, constructionYear, compartmentation: comp, floor },
                 };
             });
+
+            const ssrPhotos = extractOlxListingPhotosFromHtml(await page.content());
+            if (ssrPhotos.length) listing.images = ssrPhotos;
 
             console.log("[OlxListingScrapper] Scraped:", JSON.stringify({
                 url: listingUrl, title: listing.title, price: listing.price,

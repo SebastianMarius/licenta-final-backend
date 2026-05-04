@@ -17,37 +17,38 @@ export class RentingPageService {
 
   async getListing(prismaId: string) {
     const listing = await this.prisma.listing.findUnique({ where: { id: prismaId } });
-    console.log(listing);
-    const listingUrl = listing?.url;
+    if (!listing) throw new NotFoundException();
 
-    switch (listing?.source) {
+    const listingUrl = listing.url;
+    let imageUrls = listing.imageUrls;
+
+    switch (listing.source) {
       case 'olx':
         if (listingUrl) {
           const data = await this.olxListingScraper.scrape(listingUrl);
-          console.log(data);
+          if (data.images.length) imageUrls = data.images;
         }
         break;
       case 'storia':
         if (listingUrl) {
           const data = await this.storiaListingScraper.scrape(listingUrl);
-          console.log(data);
+          if (data.images.length) imageUrls = data.images;
         }
-          break;
+        break;
       case 'publi24':
         if (listingUrl) {
           const data = await this.publi24ListingScraper.scrape(listingUrl);
-          console.log(data);
+          if (data.images.length) imageUrls = data.images;
         }
         break;
       case 'imobiliare':
         if (listingUrl) {
           const data = await this.imobiliareListingScraper.scrape(listingUrl);
-          console.log(data);
+          if (data.images.length) imageUrls = data.images;
         }
         break;
     }
 
-    if (!listing) throw new NotFoundException();
-    return listing;
+    return { ...listing, imageUrls };
   }
 }

@@ -91,15 +91,66 @@ export class Publi24ListingScrapper {
                     }
                 }
 
-                // Images: gallery <img> elements — alt text contains "imagine"
-                const images = [
-                    ...new Set(
-                        Array.from(document.querySelectorAll<HTMLImageElement>("img"))
-                            .filter((img) => /imagine/i.test(img.alt ?? ""))
-                            .map((img) => img.src || img.getAttribute("data-src") || "")
-                            .filter(Boolean),
-                    ),
-                ];
+                // Images: only the listing carousel (numbered thumbnails), not site-wide CDN assets
+                const rank = (u: string): number => {
+                    const x = u.toLowerCase();
+                    if (x.includes("/extralarge/")) return 5;
+                    if (x.includes("/large/")) return 4;
+                    if (x.includes("/top/")) return 3;
+                    if (x.includes("/medium/")) return 2;
+                    if (x.includes("/small/")) return 1;
+                    return 0;
+                };
+                const better = (a: string, b: string) => (rank(b) > rank(a) ? b : a);
+                const fileHash = (u: string): string | null => {
+                    const m = u.match(/\/([a-f0-9]{32})\.(webp|jpg|jpeg|png)/i);
+                    return m ? m[1].toLowerCase() : null;
+                };
+                const isGallerySize = (u: string) =>
+                    /\/vertical-ro-[^/]+\/(extralarge|large|top|medium|small)\//i.test(u);
+
+                const hero = document.querySelector<HTMLImageElement>("img.detailViewImg");
+                const galleryScope: Element =
+                    hero?.closest("div[class*='col-md-8'], div[class*='col-lg-8'], article, main") ??
+                    document.querySelector("main") ??
+                    document.body;
+
+                const byIndex = new Map<number, string>();
+                for (const img of galleryScope.querySelectorAll<HTMLImageElement>("img")) {
+                    const label = `${img.alt || ""} ${img.getAttribute("title") || ""}`;
+                    const num = label.match(/(?:imagine|image)\s*(\d+)/i);
+                    if (!num) continue;
+                    const src = img.src || img.getAttribute("data-src") || "";
+                    if (!src.includes("s3.publi24.ro") || src.includes("/avatars/") || !isGallerySize(src)) continue;
+                    const i = parseInt(num[1], 10);
+                    const prev = byIndex.get(i);
+                    byIndex.set(i, prev ? better(prev, src) : src);
+                }
+
+                const bestByHash = new Map<string, string>();
+                for (const img of galleryScope.querySelectorAll<HTMLImageElement>("img")) {
+                    const src = img.src || img.getAttribute("data-src") || "";
+                    if (!src.includes("s3.publi24.ro") || !isGallerySize(src)) continue;
+                    const h = fileHash(src);
+                    if (!h) continue;
+                    const prev = bestByHash.get(h);
+                    bestByHash.set(h, prev ? better(prev, src) : src);
+                }
+
+                let images: string[] = [];
+                const heroSrc = hero?.src || "";
+                const indices = [...byIndex.keys()].sort((a, b) => a - b);
+                if (indices.length > 0) {
+                    images = indices.map((idx) => {
+                        let u = byIndex.get(idx)!;
+                        const h = fileHash(u);
+                        if (h && bestByHash.has(h)) u = bestByHash.get(h)!;
+                        return u;
+                    });
+                } else if (heroSrc && isGallerySize(heroSrc)) {
+                    const h = fileHash(heroSrc);
+                    images = [h && bestByHash.has(h) ? bestByHash.get(h)! : heroSrc];
+                }
 
                 // Seller: the h2 that sits just above the "Contactează vânzătorul" form
                 let seller: string | null = null;

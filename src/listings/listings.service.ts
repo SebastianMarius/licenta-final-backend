@@ -25,7 +25,7 @@ export class ListingsService {
     rentSouce?: string | undefined,
   ) {
     const searchCity = city.trim().toLowerCase();
-    const formaKey = forma ?? '';
+    const formaKey = forma?.toLowerCase() ?? '';
     const roomsKey = Math.max(0, Math.floor(numBound(minRoms, 0)));
 
     let minP = numBound(minPrice, 0);
@@ -41,7 +41,7 @@ export class ListingsService {
       return this.enricher.enrichPayload(filtered, city, prismaMap, sortingMethod, rentSouce);
     }
 
-    const payload = await this.aggregator.fetchAll(city, forma, roomsKey);
+    const payload = await this.aggregator.fetchAll(city, forma?.toLowerCase(), roomsKey);
 
     await this.repository.createManyListings(this.enricher.toCreateManyInput(payload, city));
 

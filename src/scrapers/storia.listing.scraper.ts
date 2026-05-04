@@ -3,6 +3,57 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 puppeteer.use(StealthPlugin());
 
+type StoriaImageSizes = {
+    huge?: string;
+    original?: string;
+    large?: string;
+    full?: string;
+    medium?: string;
+    small?: string;
+    thumbnail?: string;
+};
+
+function pickStoriaImageUrl(entry: unknown): string | null {
+    if (typeof entry === "string" && entry.startsWith("http")) return entry;
+    if (!entry || typeof entry !== "object") return null;
+    const o = entry as StoriaImageSizes;
+    const u =
+        o.huge ??
+        o.original ??
+        o.large ??
+        o.full ??
+        o.medium ??
+        o.small ??
+        o.thumbnail;
+    return typeof u === "string" && u.startsWith("http") ? u : null;
+}
+
+/** Full carousel URLs live in `__NEXT_DATA__` → `props.pageProps.ad.images`. */
+function extractStoriaListingImagesFromHtml(html: string): string[] {
+    try {
+        const startMarker = '<script id="__NEXT_DATA__"';
+        const i = html.indexOf(startMarker);
+        if (i < 0) return [];
+        const gt = html.indexOf(">", i);
+        const end = html.indexOf("</script>", gt);
+        if (gt < 0 || end < 0) return [];
+        const jsonText = html.slice(gt + 1, end).trim();
+        const images = JSON.parse(jsonText)?.props?.pageProps?.ad?.images;
+        if (!Array.isArray(images)) return [];
+        const urls = images.map((img: unknown) => pickStoriaImageUrl(img)).filter(Boolean) as string[];
+        return [...new Set(urls)];
+    } catch {
+        return [];
+    }
+}
+
+/** After hydration, `#__NEXT_DATA__` in the DOM can list fewer photos than the SSR payload — prefer the longest list. */
+function mergeStoriaImageSources(...lists: string[][]): string[] {
+    const nonempty = lists.filter((x) => x.length > 0);
+    if (nonempty.length === 0) return [];
+    return nonempty.reduce((a, b) => (b.length > a.length ? b : a));
+}
+
 export interface StoriaListing {
     title: string | null;
     price: string | null;
@@ -38,7 +89,15 @@ export class StoriaListingScrapper {
             await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             await page.setExtraHTTPHeaders({ "Accept-Language": "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7" });
             await page.setViewport({ width: 1920, height: 1080 });
-            await page.goto(listingUrl, { waitUntil: "domcontentloaded", timeout: 45000 });
+            const navResponse = await page.goto(listingUrl, { waitUntil: "domcontentloaded", timeout: 45000 });
+            let navigationHtml = "";
+            if (navResponse) {
+                try {
+                    navigationHtml = await navResponse.text();
+                } catch {
+                    navigationHtml = "";
+                }
+            }
             await new Promise((r) => setTimeout(r, 1200));
 
             const blocked = await page.evaluate(() => {
@@ -93,11 +152,29 @@ export class StoriaListingScrapper {
                             description = div.innerText?.trim() || null;
                         }
 
-                        images = [...new Set(
-                            ((ad.images ?? []) as Array<{ large?: string; medium?: string; small?: string }>)
-                                .map((i) => i.large ?? i.medium ?? i.small ?? "")
-                                .filter(Boolean),
-                        )];
+                        {
+                            const pick = (entry: unknown): string | null => {
+                                if (typeof entry === "string" && entry.startsWith("http")) return entry;
+                                if (!entry || typeof entry !== "object") return null;
+                                const o = entry as Record<string, string | undefined>;
+                                const u =
+                                    o.huge ??
+                                    o.original ??
+                                    o.large ??
+                                    o.full ??
+                                    o.medium ??
+                                    o.small ??
+                                    o.thumbnail;
+                                return typeof u === "string" && u.startsWith("http") ? u : null;
+                            };
+                            images = [
+                                ...new Set(
+                                    ((ad.images ?? []) as unknown[])
+                                        .map((img) => pick(img))
+                                        .filter(Boolean) as string[],
+                                ),
+                            ];
+                        }
 
                         const locs: Array<{ fullName: string; parentIds: string[] }> =
                             ad.location?.reverseGeocoding?.locations ?? [];
@@ -153,6 +230,11 @@ export class StoriaListingScrapper {
                     details: { squareMeters, constructionYear, compartmentation: comp, floor },
                 };
             });
+
+            const fromNavigation = extractStoriaListingImagesFromHtml(navigationHtml);
+            const fromDocument = extractStoriaListingImagesFromHtml(await page.content());
+            const merged = mergeStoriaImageSources(fromNavigation, fromDocument, listing.images);
+            if (merged.length) listing.images = merged;
 
             console.log("[StoriaListingScrapper] Scraped:", JSON.stringify({
                 url: listingUrl, title: listing.title, price: listing.price,

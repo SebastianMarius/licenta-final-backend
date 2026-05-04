@@ -7,92 +7,92 @@ puppeteer.use(StealthPlugin());
 
 const STORIA_CITY_MAP: Record<string, string> = {
     // County capitals
-    "alba-iulia":           "alba/alba--iulia",
-    "arad":                 "arad/arad",
-    "pitesti":              "arges/pitesti",
-    "bacau":                "bacau/bacau",
-    "oradea":               "bihor/oradea",
-    "bistrita":             "bistrita--nasaud/bistrita",
-    "botosani":             "botosani/botosani",
-    "brasov":               "brasov/brasov",
-    "braila":               "braila/braila",
-    "bucuresti":            "bucuresti/bucuresti",
-    "buzau":                "buzau/buzau",
-    "resita":               "caras--severin/resita",
-    "calarasi":             "calarasi/calarasi",
-    "cluj-napoca":          "cluj/cluj--napoca",
-    "constanta":            "constanta/constanta",
-    "sfantu-gheorghe":      "covasna/sfantu--gheorghe",
-    "targoviste":           "dambovita/targoviste",
-    "craiova":              "dolj/craiova",
-    "galati":               "galati/galati",
-    "giurgiu":              "giurgiu/giurgiu",
-    "targu-jiu":            "gorj/targu--jiu",
-    "miercurea-ciuc":       "harghita/miercurea--ciuc",
-    "deva":                 "hunedoara/deva",
-    "slobozia":             "ialomita/slobozia",
-    "iasi":                 "iasi/iasi",
-    "baia-mare":            "maramures/baia--mare",
-    "drobeta-turnu-severin":"mehedinti/drobeta--turnu--severin",
-    "targu-mures":          "mures/targu--mures",
-    "piatra-neamt":         "neamt/piatra--neamt",
-    "slatina":              "olt/slatina",
-    "ploiesti":             "prahova/ploiesti",
-    "satu-mare":            "satu--mare/satu--mare",
-    "zalau":                "salaj/zalau",
-    "sibiu":                "sibiu/sibiu",
-    "suceava":              "suceava/suceava",
-    "alexandria":           "teleorman/alexandria",
-    "timisoara":            "timis/timisoara",
-    "tulcea":               "tulcea/tulcea",
-    "vaslui":               "vaslui/vaslui",
-    "ramnicu-valcea":       "valcea/ramnicu--valcea",
-    "focsani":              "vrancea/focsani",
+    "alba-iulia": "alba/alba--iulia",
+    "arad": "arad/arad",
+    "pitesti": "arges/pitesti",
+    "bacau": "bacau/bacau",
+    "oradea": "bihor/oradea",
+    "bistrita": "bistrita--nasaud/bistrita",
+    "botosani": "botosani/botosani",
+    "brasov": "brasov/brasov",
+    "braila": "braila/braila",
+    "bucuresti": "bucuresti/bucuresti",
+    "buzau": "buzau/buzau",
+    "resita": "caras--severin/resita",
+    "calarasi": "calarasi/calarasi",
+    "cluj-napoca": "cluj/cluj--napoca",
+    "constanta": "constanta/constanta",
+    "sfantu-gheorghe": "covasna/sfantu--gheorghe",
+    "targoviste": "dambovita/targoviste",
+    "craiova": "dolj/craiova",
+    "galati": "galati/galati",
+    "giurgiu": "giurgiu/giurgiu",
+    "targu-jiu": "gorj/targu--jiu",
+    "miercurea-ciuc": "harghita/miercurea--ciuc",
+    "deva": "hunedoara/deva",
+    "slobozia": "ialomita/slobozia",
+    "iasi": "iasi/iasi",
+    "baia-mare": "maramures/baia--mare",
+    "drobeta-turnu-severin": "mehedinti/drobeta--turnu--severin",
+    "targu-mures": "mures/targu--mures",
+    "piatra-neamt": "neamt/piatra--neamt",
+    "slatina": "olt/slatina",
+    "ploiesti": "prahova/ploiesti",
+    "satu-mare": "satu--mare/satu--mare",
+    "zalau": "salaj/zalau",
+    "sibiu": "sibiu/sibiu",
+    "suceava": "suceava/suceava",
+    "alexandria": "teleorman/alexandria",
+    "timisoara": "timis/timisoara",
+    "tulcea": "tulcea/tulcea",
+    "vaslui": "vaslui/vaslui",
+    "ramnicu-valcea": "valcea/ramnicu--valcea",
+    "focsani": "vrancea/focsani",
     // Other major cities
-    "turda":                "cluj/turda",
-    "dej":                  "cluj/dej",
-    "campia-turzii":        "cluj/campia--turzii",
-    "medias":               "sibiu/medias",
-    "hunedoara":            "hunedoara/hunedoara",
-    "petrosani":            "hunedoara/petrosani",
-    "lugoj":                "timis/lugoj",
-    "roman":                "neamt/roman",
-    "dorohoi":              "botosani/dorohoi",
-    "mangalia":             "constanta/mangalia",
-    "navodari":             "constanta/navodari",
-    "campulung":            "arges/campulung",
-    "curtea-de-arges":      "arges/curtea--de--arges",
-    "campina":              "prahova/campina",
-    "sinaia":               "prahova/sinaia",
-    "ramnicu-sarat":        "buzau/ramnicu--sarat",
+    "turda": "cluj/turda",
+    "dej": "cluj/dej",
+    "campia-turzii": "cluj/campia--turzii",
+    "medias": "sibiu/medias",
+    "hunedoara": "hunedoara/hunedoara",
+    "petrosani": "hunedoara/petrosani",
+    "lugoj": "timis/lugoj",
+    "roman": "neamt/roman",
+    "dorohoi": "botosani/dorohoi",
+    "mangalia": "constanta/mangalia",
+    "navodari": "constanta/navodari",
+    "campulung": "arges/campulung",
+    "curtea-de-arges": "arges/curtea--de--arges",
+    "campina": "prahova/campina",
+    "sinaia": "prahova/sinaia",
+    "ramnicu-sarat": "buzau/ramnicu--sarat",
 
-    "tecuci":               "galati/tecuci",
-    "adjud":                "vrancea/adjud",
-    "onesti":               "bacau/onesti",
-    "moinesti":             "bacau/moinesti",
-    "fagaras":              "brasov/fagaras",
-    "codlea":               "brasov/codlea",
-    "sacele":               "brasov/sacele",
-    "odorheiu-secuiesc":    "harghita/odorheiu--secuiesc",
-    "reghin":               "mures/reghin",
-    "sighisoara":           "mures/sighisoara",
-    "toplita":              "harghita/toplita",
-    "turnu-magurele":       "teleorman/turnu--magurele",
-    "rosiori-de-vede":      "teleorman/rosiori--de--vede",
-    "caracal":              "olt/caracal",
-    "balti":                "olt/balti",
-    "dr-tr-severin":        "mehedinti/drobeta--turnu--severin",
-    "targu-neamt":          "neamt/targu--neamt",
-    "pascani":              "iasi/pascani",
-    "husi":                 "vaslui/husi",
-    "barlad":               "vaslui/barlad",
+    "tecuci": "galati/tecuci",
+    "adjud": "vrancea/adjud",
+    "onesti": "bacau/onesti",
+    "moinesti": "bacau/moinesti",
+    "fagaras": "brasov/fagaras",
+    "codlea": "brasov/codlea",
+    "sacele": "brasov/sacele",
+    "odorheiu-secuiesc": "harghita/odorheiu--secuiesc",
+    "reghin": "mures/reghin",
+    "sighisoara": "mures/sighisoara",
+    "toplita": "harghita/toplita",
+    "turnu-magurele": "teleorman/turnu--magurele",
+    "rosiori-de-vede": "teleorman/rosiori--de--vede",
+    "caracal": "olt/caracal",
+    "balti": "olt/balti",
+    "dr-tr-severin": "mehedinti/drobeta--turnu--severin",
+    "targu-neamt": "neamt/targu--neamt",
+    "pascani": "iasi/pascani",
+    "husi": "vaslui/husi",
+    "barlad": "vaslui/barlad",
 };
 
 const STORIA_BASE = "https://www.storia.ro/ro/rezultate/inchiriere/apartament";
 
-const MAX_PAGES = 10;
+const MAX_PAGES = 30;
 
-const roomNumbersLocal =["ONE","TWO","THREE","FOUR"];
+const roomNumbersLocal = ["ONE", "TWO", "THREE", "FOUR"];
 
 @Injectable()
 export class StoriaScrapper {
@@ -129,8 +129,14 @@ export class StoriaScrapper {
             for (let pageToScrape = 1; pageToScrape <= MAX_PAGES; pageToScrape++) {
                 const url = `${baseUrl}?by=DEFAULT&direction=DESC&page=${pageToScrape}`;
                 await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+                if (pageToScrape === 1) {
+                    await page
+                        .waitForSelector("#__NEXT_DATA__", { timeout: 15000 })
+                        .catch(() => { });
+                    await new Promise((r) => setTimeout(r, 400));
+                }
 
-                const { items, totalPages } = await page.evaluate((pageNum: number) => {
+                let { items, totalPages } = await page.evaluate((pageNum: number) => {
                     const scriptEl = document.getElementById("__NEXT_DATA__");
                     if (!scriptEl?.textContent) return { items: [], totalPages: 0 };
 
@@ -143,9 +149,32 @@ export class StoriaScrapper {
                     return { items: rawItems, totalPages };
                 }, pageToScrape);
 
+                // if (items.length === 0 && pageToScrape === 1) {
+                //     await new Promise((r) => setTimeout(r, 2500));
+                //     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+                //     await page
+                //         .waitForSelector("#__NEXT_DATA__", { timeout: 15000 })
+                //         .catch(() => {});
+                //     await new Promise((r) => setTimeout(r, 400));
+                //     const second = await page.evaluate((pageNum: number) => {
+                //         const scriptEl = document.getElementById("__NEXT_DATA__");
+                //         if (!scriptEl?.textContent) return { items: [], totalPages: 0 };
+
+                //         const nextData = JSON.parse(scriptEl.textContent);
+                //         const searchAds = nextData?.props?.pageProps?.data?.searchAds ?? {};
+                //         const rawItems: unknown[] = searchAds?.items ?? [];
+                //         const pagination = searchAds?.pagination ?? {};
+                //         const totalPages: number = pagination?.totalPages ?? pageNum;
+
+                //         return { items: rawItems, totalPages };
+                //     }, pageToScrape);
+                //     items = second.items;
+                //     totalPages = second.totalPages;
+                // }
+
                 if (items.length === 0) break;
 
-                 const stamped = items.map((item: any, index: number) => {
+                const stamped = items.map((item: any, index: number) => {
                     const slugRaw = item?.slug;
                     const slug =
                         typeof slugRaw === "string" ? slugRaw.trim().replace(/^\//, "") : "";
@@ -167,9 +196,9 @@ export class StoriaScrapper {
                 const filteredBasedOnRooms =
                     minRoms != null && minRoms > 1
                         ? filtered.filter(
-                              (item: any) =>
-                                  item.roomsNumber === roomNumbersLocal[minRoms - 1],
-                          )
+                            (item: any) =>
+                                item.roomsNumber === roomNumbersLocal[minRoms - 1],
+                        )
                         : filtered;
                 allItems.push(...filteredBasedOnRooms);
                 globalIndex += items.length;

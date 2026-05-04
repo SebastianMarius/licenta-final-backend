@@ -41,7 +41,7 @@ export class ListingsEnricher {
     ];
   }
 
-  enrichPayload(payload: ListingsPayload, city: string, prisma: Map<string, string>, sortingMethod: string = 'date', rentSouce: string | undefined) {
+  enrichPayload(payload: ListingsPayload, city: string, prisma: Map<string, string>, sortingMethod: string = 'newest', rentSouce: string | undefined) {
     const rows = [
       ...this.enrich(payload.olx, city, 'olx', mapOlxToListing, prisma),
       ...this.enrich(payload.storia, city, 'storia', mapStoriaToListing, prisma),
@@ -76,6 +76,7 @@ export class ListingsEnricher {
     });
 
     const sortByDate = () => {
+      // console.log(rowsWithDateParsed)
       return [...rowsWithDateParsed].sort((a, b) => {
         const aTime = listingDateMs(a);
         const bTime = listingDateMs(b);
@@ -126,9 +127,8 @@ export class ListingsEnricher {
     }
 
     let sortedItems;
-
     switch (sortingMethod) {
-      case "date": {
+      case "newest": {
         sortedItems = sortByDate();
         break;
       }
