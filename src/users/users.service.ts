@@ -6,13 +6,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class UsersService {
     constructor(private readonly prisma: PrismaService) {}
 
-    async findOne(username: string): Promise<User | null> {
-        return this.prisma.user.findUnique({ where: { username } });
+    async findByEmail(email: string): Promise<User | null> {
+        return this.prisma.user.findUnique({ where: { email } });
     }
 
-    async create(username: string, passwordHash: string): Promise<User> {
+    async create(email: string, passwordHash: string): Promise<User> {
         return this.prisma.user.create({
-            data: { username, passwordHash },
+            data: { email, passwordHash },
         });
     }
 }

@@ -1,24 +1,27 @@
 services:
   postgres:
-      image: postgres:16-alpine
-      container_name: rental-postgres
-      restart: unless-stopped
-      ports:
-        - "5433:5432"   # 5433 on host if 5432 is already in use
-      environment:
-        POSTGRES_USER: rental
-        POSTGRES_PASSWORD: rental_dev
-        POSTGRES_DB: rental_db
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U rental -d rental_db"]
-        interval: 5s
-        timeout: 5s
-        retries: 5
+    image: postgres:16-alpine
+    container_name: rental-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"   # 5433 on host if 5432 is already in use
+    environment:
+      POSTGRES_USER: rental
+      POSTGRES_PASSWORD: rental_dev
+      POSTGRES_DB: rental_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rental -d rental_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   app:
     build: .
     container_name: nest-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "9000:3000"
     volumes:

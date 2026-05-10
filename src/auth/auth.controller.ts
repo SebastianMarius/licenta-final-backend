@@ -17,14 +17,14 @@ export class AuthController {
 
     @HttpCode(HttpStatus.CREATED)
     @Post('signup')
-    signUp(@Body() body: { username?: string; password?: string }) {
-        return this.authService.signUp(body.username ?? '', body.password ?? '');
+    signUp(@Body() body: { email?: string; password?: string }) {
+        return this.authService.signUp(body.email ?? '', body.password ?? '');
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
-    signIn(@Body() body: { username?: string; password?: string }) {
-        return this.authService.signIn(body.username ?? '', body.password ?? '');
+    signIn(@Body() body: { email?: string; password?: string }) {
+        return this.authService.signIn(body.email ?? '', body.password ?? '');
     }
 
     @UseGuards(AuthGuard)
