@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     Body,
     Controller,
     Get,
@@ -25,6 +26,25 @@ export class AuthController {
     @Post('login')
     signIn(@Body() body: { email?: string; password?: string }) {
         return this.authService.signIn(body.email ?? '', body.password ?? '');
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('forgot-password')
+    forgotPassword(@Body() body: { email?: string }) {
+        const email = body.email?.trim();
+        if (!email) {
+            throw new BadRequestException('Email is required');
+        }
+        return this.authService.forgotPassword(email);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('reset-password')
+    resetPassword(@Body() body: { token?: string; password?: string }) {
+        return this.authService.resetPassword(
+            body.token ?? '',
+            body.password ?? '',
+        );
     }
 
     @UseGuards(AuthGuard)

@@ -15,4 +15,41 @@ export class UsersService {
             data: { email, passwordHash },
         });
     }
+
+    async setPasswordResetToken(
+        userId: number,
+        tokenHash: string,
+        expiresAt: Date,
+    ): Promise<User> {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                passwordResetTokenHash: tokenHash,
+                passwordResetExpires: expiresAt,
+            },
+        });
+    }
+
+    async findByValidResetTokenHash(tokenHash: string): Promise<User | null> {
+        return this.prisma.user.findFirst({
+            where: {
+                passwordResetTokenHash: tokenHash,
+                passwordResetExpires: { gt: new Date() },
+            },
+        });
+    }
+
+    async updatePasswordAndClearReset(
+        userId: number,
+        passwordHash: string,
+    ): Promise<User> {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                passwordHash,
+                passwordResetTokenHash: null,
+                passwordResetExpires: null,
+            },
+        });
+    }
 }

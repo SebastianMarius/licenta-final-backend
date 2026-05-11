@@ -19,6 +19,8 @@ services:
   app:
     build: .
     container_name: nest-dev
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,7 +37,10 @@ services:
       # Force file watcher to use polling (needed when code is bind-mounted in Docker on Mac/Windows)
       - CHOKIDAR_USEPOLLING=true
       - CHOKIDAR_INTERVAL=1000
-      - CHROME_PROFILE_PATH=/app/chrome-profile 
+      - CHROME_PROFILE_PATH=/app/chrome-profile
+      # Optional overrides (defaults also read from .env via env_file):
+      # - RESEND_FROM=Rental <onboarding@resend.dev>
+      # - PASSWORD_RESET_FRONTEND_URL=http://localhost:3000
     command: sh -c "npm install && npx prisma migrate deploy && npm run start:dev:docker"
 
 volumes:
