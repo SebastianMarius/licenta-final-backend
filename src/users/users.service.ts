@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) { }
 
     async findByEmail(email: string): Promise<User | null> {
         return this.prisma.user.findUnique({ where: { email } });
@@ -51,5 +51,9 @@ export class UsersService {
                 passwordResetExpires: null,
             },
         });
+    }
+
+    async saveApiKey(apiKey: string) {
+
     }
 }

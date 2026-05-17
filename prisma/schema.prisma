@@ -51,4 +51,27 @@ model User {
   passwordResetTokenHash   String?   @unique
   passwordResetExpires     DateTime?
   createdAt                DateTime  @default(now())
+  advertisements           Advertisement[]
+}
+
+model Advertisement {
+  id          String   @id @default(cuid())
+  ownerId     Int
+  title       String
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(12, 2)
+  currency    String   @default("RON")
+  city        String
+  citySlug    String
+  address     String?
+  areaSqm     Decimal? @db.Decimal(8, 2)
+  roomsNumber Int?
+  imageUrls   String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([citySlug])
 }

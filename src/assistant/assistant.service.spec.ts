@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { AssistantService } from './assistant.service';
 
 describe('AssistantService', () => {
@@ -6,7 +7,16 @@ describe('AssistantService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AssistantService],
+      providers: [
+        AssistantService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) =>
+              key === 'GEMINI_API_KEY' ? 'test-key' : undefined,
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<AssistantService>(AssistantService);

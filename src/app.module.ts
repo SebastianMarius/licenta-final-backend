@@ -8,10 +8,19 @@ import { RentingPageModule } from './renting-page/renting-page.module';
 import { AssistantModule } from './assistant/assistant.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-
+import { AdvertisementsModule } from './advertisements/advertisements.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, ListingsModule, RentingPageModule, AssistantModule, AuthModule, UsersModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    ListingsModule,
+    RentingPageModule,
+    AssistantModule,
+    AuthModule,
+    UsersModule,
+    AdvertisementsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

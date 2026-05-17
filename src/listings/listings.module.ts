@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AdvertisementsModule } from 'src/advertisements/advertisements.module';
 import { OlxScraper } from 'src/scrapers/olx.scraper';
 import { StoriaScrapper } from 'src/scrapers/storia.scraper';
 import { Publi24Scraper } from 'src/scrapers/publi24.scraper';
@@ -10,6 +11,7 @@ import { ListingsRepository } from './listings-repository.service';
 import { ListingsService } from './listings.service';
 
 @Module({
+  imports: [AdvertisementsModule],
   providers: [
     ListingsService,
     ListingsAggregator,

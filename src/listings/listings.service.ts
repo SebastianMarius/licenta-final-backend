@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { AdvertisementsService } from 'src/advertisements/advertisements.service';
 import { ListingsAggregator } from './listings-aggregator.service';
 import { ListingsEnricher } from './listings-enricher.service';
 import { filterListingsByPrice, numBound } from './listings-filter';
@@ -10,10 +11,11 @@ import type { ListingsPayload } from './listings.types';
 @Injectable()
 export class ListingsService {
   constructor(
+    private readonly advertisementsService: AdvertisementsService,
     private readonly aggregator: ListingsAggregator,
     private readonly repository: ListingsRepository,
     private readonly enricher: ListingsEnricher,
-  ) { }
+  ) {}
 
   async getAllListings(
     city: string,
@@ -22,7 +24,7 @@ export class ListingsService {
     maxPrice?: number | string,
     minRoms?: number | string,
     sortingMethod?: string,
-    rentSouce?: string | undefined,
+    rentSouce?: string,
   ) {
     const searchCity = city.trim().toLowerCase();
     const formaKey = forma?.toLowerCase() ?? '';
@@ -32,28 +34,68 @@ export class ListingsService {
     let maxP = numBound(maxPrice, 9_999_999);
     if (minP > maxP) [minP, maxP] = [maxP, minP];
 
-    const cached = await this.repository.findScrapeCache(searchCity, formaKey, roomsKey);
+    const advertisementRows = await this.advertisementsService.findListingRows(
+      city,
+      minP,
+      maxP,
+    );
+
+    const cached = await this.repository.findScrapeCache(
+      searchCity,
+      formaKey,
+      roomsKey,
+    );
     if (cached && Date.now() - cached.scrapedAt.getTime() < LISTINGS_CACHE_MS) {
-      const filtered = filterListingsByPrice(cached.payload as ListingsPayload, minP, maxP);
+      const filtered = filterListingsByPrice(
+        cached.payload as ListingsPayload,
+        minP,
+        maxP,
+      );
       const prismaMap = await this.repository.getIdMapByExternalIds(
         this.enricher.externalIdsForPayload(filtered, city),
       );
-      return this.enricher.enrichPayload(filtered, city, prismaMap, sortingMethod, rentSouce);
+      return this.enricher.enrichPayload(
+        filtered,
+        city,
+        prismaMap,
+        sortingMethod,
+        rentSouce,
+        advertisementRows,
+      );
     }
 
-    const payload = await this.aggregator.fetchAll(city, forma?.toLowerCase(), roomsKey);
+    const payload = await this.aggregator.fetchAll(
+      city,
+      forma?.toLowerCase(),
+      roomsKey,
+    );
 
-    await this.repository.createManyListings(this.enricher.toCreateManyInput(payload, city));
+    await this.repository.createManyListings(
+      this.enricher.toCreateManyInput(payload, city),
+    );
 
-    const jsonPayload = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
-    await this.repository.upsertScrapeCache(searchCity, formaKey, roomsKey, jsonPayload);
+    const jsonPayload = JSON.parse(
+      JSON.stringify(payload),
+    ) as Prisma.InputJsonValue;
+    await this.repository.upsertScrapeCache(
+      searchCity,
+      formaKey,
+      roomsKey,
+      jsonPayload,
+    );
 
     const filtered = filterListingsByPrice(payload, minP, maxP);
     const prismaMap = await this.repository.getIdMapByExternalIds(
       this.enricher.externalIdsForPayload(filtered, city),
     );
 
-
-    return this.enricher.enrichPayload(filtered, city, prismaMap, sortingMethod, rentSouce,);
+    return this.enricher.enrichPayload(
+      filtered,
+      city,
+      prismaMap,
+      sortingMethod,
+      rentSouce,
+      advertisementRows,
+    );
   }
 }

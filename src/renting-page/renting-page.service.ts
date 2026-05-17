@@ -16,8 +16,24 @@ export class RentingPageService {
   ) {}
 
   async getListing(prismaId: string) {
-    const listing = await this.prisma.listing.findUnique({ where: { id: prismaId } });
-    if (!listing) throw new NotFoundException();
+    const listing = await this.prisma.listing.findUnique({
+      where: { id: prismaId },
+    });
+    if (!listing) {
+      const advertisement = await this.prisma.advertisement.findUnique({
+        where: { id: prismaId },
+      });
+
+      if (!advertisement) {
+        throw new NotFoundException();
+      }
+
+      return {
+        ...advertisement,
+        source: 'user',
+        url: null,
+      };
+    }
 
     const listingUrl = listing.url;
     let imageUrls = listing.imageUrls;
